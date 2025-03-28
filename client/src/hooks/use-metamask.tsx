@@ -84,27 +84,38 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   // Effect to sync wallet address with user account when both are available
   useEffect(() => {
     const syncWalletWithUserAccount = async () => {
-      if (user && address && user.walletAddress !== address) {
+      if (user && address && !user.walletConfirmed) {
         try {
-          setIsSyncingWallet(true);
-          
-          // Use the updateWalletMutation that we accessed at the top level
-          updateWalletMutation.mutate(
-            { walletAddress: address },
-            {
-              onError: (error) => {
-                console.error("Error syncing wallet:", error);
-                toast({
-                  title: "Wallet Sync Failed",
-                  description: error?.message || "Failed to link your wallet to your account. Please try again.",
-                  variant: "destructive",
-                });
-              },
-              onSettled: () => {
-                setIsSyncingWallet(false);
+          // Only attempt to auto-sync if:
+          // 1. User doesn't have a wallet address set yet
+          // 2. Or the wallet address is different (but not already confirmed)
+          if (!user.walletAddress || user.walletAddress !== address) {
+            setIsSyncingWallet(true);
+            
+            // Use the updateWalletMutation that we accessed at the top level
+            updateWalletMutation.mutate(
+              { walletAddress: address },
+              {
+                onError: (error) => {
+                  console.error("Error syncing wallet:", error);
+                  // Don't show toast for "already in use" errors on auto-sync
+                  if (!error.message?.includes("already in use")) {
+                    toast({
+                      title: "Wallet Sync Failed",
+                      description: error?.message || "Failed to link your wallet to your account. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                },
+                onSettled: () => {
+                  setIsSyncingWallet(false);
+                }
               }
-            }
-          );
+            );
+          } else {
+            // If it's the same address, no need to attempt the update
+            setIsSyncingWallet(false);
+          }
         } catch (error: any) {
           console.error("Error syncing wallet:", error);
           toast({
@@ -114,6 +125,9 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
           });
           setIsSyncingWallet(false);
         }
+      } else {
+        // No need to sync if the user's wallet is already confirmed
+        setIsSyncingWallet(false);
       }
     };
     
@@ -171,8 +185,39 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Validate to address
+      if (!to || typeof to !== 'string' || !to.startsWith('0x')) {
+        throw new Error("Invalid recipient address. Ethereum addresses must start with 0x.");
+      }
+
+      // Validate amount
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        throw new Error("Invalid amount. Please enter a positive number.");
+      }
+
       // Convert ETH amount to wei (1 ETH = 10^18 wei)
-      const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
+      // Use string operations to avoid floating point precision issues
+      const amountString = amount.toString();
+      const decimalIndex = amountString.indexOf('.');
+      let wholeNumber = amountString;
+      let fractional = '';
+      
+      if (decimalIndex !== -1) {
+        wholeNumber = amountString.substring(0, decimalIndex);
+        fractional = amountString.substring(decimalIndex + 1);
+      }
+      
+      // Pad or truncate fractional part to 18 decimals
+      fractional = fractional.padEnd(18, '0').substring(0, 18);
+      
+      // Combine whole and fractional parts
+      const amountWeiString = wholeNumber + fractional;
+      // Remove leading zeros
+      const amountWeiStringTrimmed = amountWeiString.replace(/^0+/, '') || '0';
+      
+      // Convert to BigInt and then to hex
+      const amountWei = BigInt(amountWeiStringTrimmed);
       const amountHex = '0x' + amountWei.toString(16);
       
       // Show pre-transaction notification
@@ -181,23 +226,37 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         description: "Please confirm the transaction in your MetaMask wallet.",
       });
       
-      // Send transaction with minimal parameters to avoid errors
-      // The 'data' field was causing the buffer overrun
+      // Send transaction with minimal parameters
+      const transactionParameters = {
+        from: address,
+        to,
+        value: amountHex,
+        // Don't include gas-related parameters or data
+      };
+      
+      console.log("Sending transaction with parameters:", transactionParameters);
+      
       const txHash = await window.ethereum.request({
         method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          to,
-          value: amountHex,
-          // Remove excessive gas parameters and data field that was causing issues
-        }],
+        params: [transactionParameters],
       });
       
-      // Log the success of the transaction submission
       console.log("Transaction submitted:", txHash);
       
+      // Show success notification
+      toast({
+        title: "Transaction Submitted",
+        description: "Your transaction has been submitted to the blockchain.",
+      });
+      
       // Listen for transaction receipt to get confirmation
-      const checkTransactionConfirmation = async (txHash: string): Promise<void> => {
+      const checkTransactionConfirmation = async (txHash: string, attempts = 0): Promise<void> => {
+        // Stop checking after 30 attempts (about 1 minute)
+        if (attempts > 30) {
+          console.log("Stopped checking for confirmation after 30 attempts");
+          return;
+        }
+        
         try {
           const receipt = await window.ethereum.request({
             method: 'eth_getTransactionReceipt',
@@ -205,16 +264,28 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
           });
           
           if (receipt) {
-            toast({
-              title: "Transaction Confirmed",
-              description: `Your transaction has been confirmed on the blockchain.`,
-            });
+            // Check if transaction was successful
+            const status = receipt.status;
+            if (status === '0x1') {
+              toast({
+                title: "Transaction Confirmed",
+                description: "Your transaction has been confirmed on the blockchain.",
+              });
+            } else {
+              toast({
+                title: "Transaction Failed",
+                description: "Your transaction failed on the blockchain. Please check your wallet for details.",
+                variant: "destructive",
+              });
+            }
           } else {
             // Check again after 2 seconds if not confirmed
-            setTimeout(() => checkTransactionConfirmation(txHash), 2000);
+            setTimeout(() => checkTransactionConfirmation(txHash, attempts + 1), 2000);
           }
         } catch (error) {
           console.error("Error checking confirmation:", error);
+          // Continue checking despite errors
+          setTimeout(() => checkTransactionConfirmation(txHash, attempts + 1), 2000);
         }
       };
       
@@ -226,13 +297,14 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       // Handle specific errors with better messages
       if (error?.code === 4001) {
         throw new Error("Transaction rejected by user. Please try again.");
+      } else if (error?.code === -32602 || (error?.message && error?.message.includes("params"))) {
+        console.error("Transaction parameter error:", error);
+        throw new Error("Invalid transaction parameters. Please try again with a different amount.");
       } else if (error?.message?.includes("insufficient funds")) {
         throw new Error("Insufficient funds in your wallet. Please add more ETH to continue.");
-      } else if (error?.message?.includes("buffer")) {
-        // Special handling for buffer overrun errors
-        console.error("Buffer error detected, trying simplified transaction");
-        // Could implement a fallback here if needed
-        throw new Error("Transaction format error. Please try a smaller amount or contact support.");
+      } else if (error?.message?.includes("buffer") || error?.message?.includes("out-of-bounds")) {
+        console.error("Buffer error detected:", error);
+        throw new Error("Transaction format error. Please try a smaller amount.");
       }
       
       console.error("Transaction failed:", error);

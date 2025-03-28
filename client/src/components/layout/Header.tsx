@@ -79,18 +79,20 @@ export function Header() {
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => (
-                <Link key={item.name} href={item.href}>
-                  <a
-                    className={`${
-                      location === item.href
-                        ? "border-primary text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                  >
-                    {item.icon && item.icon}
-                    {item.name}
-                  </a>
-                </Link>
+                <div key={item.name}>
+                  <Link href={item.href}>
+                    <div
+                      className={`${
+                        location === item.href
+                          ? "border-primary text-gray-900"
+                          : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                      } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer`}
+                    >
+                      {item.icon && item.icon}
+                      {item.name}
+                    </div>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -120,12 +122,10 @@ export function Header() {
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <Link href="/wallet">
-                  <DropdownMenuItem>
-                    <Wallet className="mr-2 h-4 w-4" />
-                    <span>Wallet</span>
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuItem onClick={() => window.location.href = '/wallet'}>
+                  <Wallet className="mr-2 h-4 w-4" />
+                  <span>Wallet</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -147,33 +147,37 @@ export function Header() {
               <SheetContent side="left">
                 <div className="px-2 pt-2 pb-3 space-y-1">
                   {navItems.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <a
+                    <div key={item.name}>
+                      <Link href={item.href}>
+                        <div
+                          className={`${
+                            location === item.href
+                              ? "bg-primary-50 border-primary text-primary"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center cursor-pointer`}
+                          onClick={() => setIsOpen(false)}
+                        >
+                          {item.icon && item.icon}
+                          {item.name}
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
+                  <div>
+                    <Link href="/wallet">
+                      <div
                         className={`${
-                          location === item.href
+                          location === "/wallet"
                             ? "bg-primary-50 border-primary text-primary"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center`}
+                        } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center cursor-pointer`}
                         onClick={() => setIsOpen(false)}
                       >
-                        {item.icon && item.icon}
-                        {item.name}
-                      </a>
+                        <Wallet className="mr-2 h-4 w-4" />
+                        Wallet
+                      </div>
                     </Link>
-                  ))}
-                  <Link href="/wallet">
-                    <a
-                      className={`${
-                        location === "/wallet"
-                          ? "bg-primary-50 border-primary text-primary"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Wallet className="mr-2 h-4 w-4" />
-                      Wallet
-                    </a>
-                  </Link>
+                  </div>
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start pl-3 text-left text-gray-600 hover:bg-gray-50 hover:text-gray-900" 

@@ -38,26 +38,26 @@ export default function WalletProfile() {
 
   const getWalletStatusMessage = () => {
     if (!user?.walletAddress) {
-      return "You haven't linked any wallet to your account yet.";
+      return "You haven't linked any wallet to your account yet. Connect your MetaMask wallet below to get started.";
     }
     
     if (user.walletConfirmed) {
-      return "Your wallet address has been confirmed and cannot be changed.";
+      return "Your wallet address has been confirmed and cannot be changed. This ensures secure and verified transactions on the blockchain.";
     }
     
-    return "Your wallet address has been linked but not confirmed yet.";
+    return "Your wallet address has been linked but not confirmed yet. To confirm your wallet address and make it permanent, connect the same wallet and click 'Confirm Wallet Address' below.";
   };
 
   const getWalletStatusIcon = () => {
     if (!user?.walletAddress) {
-      return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+      return <AlertCircle className="h-5 w-5 text-red-500" />;
     }
     
     if (user.walletConfirmed) {
       return <ShieldCheck className="h-5 w-5 text-green-500" />;
     }
     
-    return <AlertCircle className="h-5 w-5 text-blue-500" />;
+    return <AlertCircle className="h-5 w-5 text-amber-500" />;
   };
 
   return (
@@ -74,17 +74,25 @@ export default function WalletProfile() {
         
         <CardContent className="space-y-6">
           {/* Wallet Status */}
-          <Alert variant={
-            !user?.walletAddress 
-              ? "destructive" 
-              : "default"
-          }>
-            {getWalletStatusIcon()}
-            <AlertTitle>Wallet Status</AlertTitle>
-            <AlertDescription>
-              {getWalletStatusMessage()}
-            </AlertDescription>
-          </Alert>
+          <div
+            className={`rounded-md border p-4 ${
+              !user?.walletAddress 
+                ? "border-red-400 bg-red-50 text-red-900" 
+                : user?.walletConfirmed
+                  ? "border-gray-200 bg-white" 
+                  : "border-amber-400 bg-amber-50 text-amber-900"
+            }`}
+          >
+            <div className="flex items-start space-x-2">
+              {getWalletStatusIcon()}
+              <div>
+                <h5 className="text-sm font-medium mb-1">Wallet Status</h5>
+                <p className="text-sm">
+                  {getWalletStatusMessage()}
+                </p>
+              </div>
+            </div>
+          </div>
           
           {/* MetaMask Connection */}
           <div className="border rounded-lg p-4">

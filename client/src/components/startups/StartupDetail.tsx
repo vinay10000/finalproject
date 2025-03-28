@@ -28,17 +28,18 @@ export type StartupDetailProps = {
   minInvestment: number;
   investorCount: number;
   daysLeft: number;
-  team: Array<{
+  team?: Array<{
     name: string;
     role: string;
     avatar?: string;
   }>;
-  milestones: Array<{
+  milestones?: Array<{
     title: string;
     date: string;
     completed: boolean;
   }>;
   onInvest: () => void;
+  contractAddress?: string;
 };
 
 export function StartupDetail({
@@ -123,65 +124,73 @@ export function StartupDetail({
               )}
 
               {/* Team Section */}
-              <Separator className="my-6" />
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Team</h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {team.map((member, index) => (
-                  <div key={index} className="flex items-center">
-                    <Avatar className="h-10 w-10">
-                      {member.avatar ? (
-                        <img src={member.avatar} alt={member.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
-                      <p className="text-xs text-gray-500">{member.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Roadmap & Milestones */}
-              <Separator className="my-6" />
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Roadmap & Milestones</h2>
-              <div className="flow-root">
-                <ul className="-mb-8">
-                  {milestones.map((milestone, index) => (
-                    <li key={index}>
-                      <div className="relative pb-8">
-                        {index !== milestones.length - 1 && (
-                          <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                        )}
-                        <div className="relative flex space-x-3">
-                          <div>
-                            <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
-                              milestone.completed ? 'bg-green-500' : index === milestones.findIndex(m => !m.completed) ? 'bg-primary' : 'bg-gray-300'
-                            }`}>
-                              {milestone.completed ? (
-                                <CheckIcon className="h-4 w-4 text-white" />
-                              ) : index === milestones.findIndex(m => !m.completed) ? (
-                                <PieChart className="h-4 w-4 text-white animate-spin" />
-                              ) : (
-                                <CalendarIcon className="h-4 w-4 text-white" />
-                              )}
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                            <div>
-                              <p className="text-sm text-gray-900">{milestone.title}</p>
-                            </div>
-                            <div className="text-right text-sm text-gray-500">
-                              <time>{milestone.date}</time>
-                            </div>
-                          </div>
+              {team && team.length > 0 && (
+                <>
+                  <Separator className="my-6" />
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Team</h2>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {team.map((member, index) => (
+                      <div key={index} className="flex items-center">
+                        <Avatar className="h-10 w-10">
+                          {member.avatar ? (
+                            <img src={member.avatar} alt={member.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+                          <p className="text-xs text-gray-500">{member.role}</p>
                         </div>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Roadmap & Milestones */}
+              {milestones && milestones.length > 0 && (
+                <>
+                  <Separator className="my-6" />
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Roadmap & Milestones</h2>
+                  <div className="flow-root">
+                    <ul className="-mb-8">
+                      {milestones.map((milestone, index) => (
+                        <li key={index}>
+                          <div className="relative pb-8">
+                            {index !== milestones.length - 1 && (
+                              <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                            )}
+                            <div className="relative flex space-x-3">
+                              <div>
+                                <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                                  milestone.completed ? 'bg-green-500' : index === milestones.findIndex(m => !m.completed) ? 'bg-primary' : 'bg-gray-300'
+                                }`}>
+                                  {milestone.completed ? (
+                                    <CheckIcon className="h-4 w-4 text-white" />
+                                  ) : index === milestones.findIndex(m => !m.completed) ? (
+                                    <PieChart className="h-4 w-4 text-white animate-spin" />
+                                  ) : (
+                                    <CalendarIcon className="h-4 w-4 text-white" />
+                                  )}
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                <div>
+                                  <p className="text-sm text-gray-900">{milestone.title}</p>
+                                </div>
+                                <div className="text-right text-sm text-gray-500">
+                                  <time>{milestone.date}</time>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

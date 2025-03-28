@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Header } from "@/components/layout/Header";
-import { StartupDetail } from "@/components/startups/StartupDetail";
+import { StartupDetail, type StartupDetailProps } from "@/components/startups/StartupDetail";
 import { InvestmentModal } from "@/components/startups/InvestmentModal";
 import { TransactionSuccessModal } from "@/components/startups/TransactionSuccessModal";
 import { Button } from "@/components/ui/button";
@@ -10,38 +10,25 @@ import { useMetaMask } from "@/hooks/use-metamask";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Startup, Investment } from "@shared/schema";
 
-// This would be fetched from the API in a real implementation
-const MOCK_STARTUP_DETAILS = {
-  id: 1,
-  name: "DecentraTrade",
-  category: "Blockchain",
-  fundingStage: "Seed",
-  location: "San Francisco, CA",
-  description: `DecentraTrade is a decentralized trading platform that leverages blockchain technology to enable secure, transparent peer-to-peer transactions with minimal fees and maximum security. Our platform eliminates intermediaries, reducing costs and increasing efficiency while providing users with full control over their assets.
-
-Unlike traditional exchanges, DecentraTrade uses smart contracts to automate trades, ensuring that transactions are executed exactly as agreed upon by the parties involved. This eliminates the risk of fraud and counterparty default, making trading safer and more reliable.
-
-Key features include decentralized order book with on-chain settlement, multi-signature wallet integration for enhanced security, cross-chain trading capabilities, zero-knowledge proof verification for privacy, and liquidity mining rewards for platform users.`,
-  fundingGoal: 250,
-  currentFunding: 112.5,
+// Initial default values to avoid errors before data is loaded
+const DEFAULT_STARTUP: StartupDetailProps = {
+  id: 0,
+  name: "Loading...",
+  category: "",
+  fundingStage: "",
+  location: "",
+  description: "Loading startup details...",
+  fundingGoal: 0,
+  currentFunding: 0,
   minInvestment: 0.5,
-  investorCount: 42,
-  daysLeft: 18,
-  team: [
-    { name: "Alex Johnson", role: "CEO & Co-founder" },
-    { name: "Sarah Chen", role: "CTO & Co-founder" },
-    { name: "Michael Rivera", role: "Head of Blockchain" },
-    { name: "David Kim", role: "Head of Business Dev" }
-  ],
-  milestones: [
-    { title: "MVP Launch & Initial Testing", date: "Q1 2023", completed: true },
-    { title: "Beta Platform with Initial User Base", date: "Q2 2023", completed: true },
-    { title: "Full Platform Launch with Cross-Chain Support", date: "Q4 2023", completed: false },
-    { title: "Mobile App Release & Global Expansion", date: "Q2 2024", completed: false }
-  ],
-  // This would be the actual contract address in a real implementation
-  contractAddress: "0x1234567890abcdef1234567890abcdef12345678"
+  investorCount: 0,
+  daysLeft: 0,
+  team: [],
+  milestones: [],
+  onInvest: () => {},
+  contractAddress: "0x0000000000000000000000000000000000000000"
 };
 
 export default function StartupDetailPage() {
@@ -58,15 +45,47 @@ export default function StartupDetailPage() {
     confirmations: 0
   });
 
-  // In a real implementation, fetch the startup data from the API
-  const { data: startup = MOCK_STARTUP_DETAILS } = useQuery({
-    queryKey: [`/api/startups/${id}`],
-    // Will use global fetchFn from QueryClient
-  });
-
+  // Define the invest callback
   const handleInvest = () => {
     setIsInvestModalOpen(true);
   };
+
+  // Fetch the startup data from the API
+  const { data: apiStartup, isLoading } = useQuery<Startup, Error>({
+    queryKey: [`/api/startups/${id}`]
+  });
+  
+  // Fetch investment data for this startup
+  const { data: investments = [] } = useQuery<Investment[], Error>({
+    queryKey: [`/api/startups/${id}/investments`],
+    enabled: !!apiStartup && apiStartup.id > 0
+  });
+  
+  // Transform API data to the format expected by StartupDetail component
+  const getStartupData = (): StartupDetailProps => {
+    if (!apiStartup) return DEFAULT_STARTUP;
+    
+    return {
+      id: apiStartup.id,
+      name: apiStartup.name,
+      category: apiStartup.category,
+      fundingStage: apiStartup.fundingStage,
+      description: apiStartup.description,
+      fundingGoal: apiStartup.fundingGoal,
+      currentFunding: apiStartup.currentFunding || 0,
+      minInvestment: 0.5, // Default value as it's not in the API
+      investorCount: investments?.length || 0,
+      daysLeft: 30, // Default value as it's not in the API
+      location: apiStartup.location || undefined,
+      logoUrl: apiStartup.logoUrl || undefined,
+      team: [], // No team data in the API yet
+      milestones: [], // No milestone data in the API yet
+      onInvest: handleInvest,
+      contractAddress: "0x1234567890abcdef1234567890abcdef12345678" // Placeholder contract address
+    };
+  };
+  
+  const startup = getStartupData();
 
   const handleInvestmentSubmit = async (amount: number) => {
     try {
@@ -76,8 +95,9 @@ export default function StartupDetailPage() {
       
       // This would be implemented in a production environment
       // to interact with the smart contract and process the investment
+      const contractAddress: string = "0x1234567890abcdef1234567890abcdef12345678";
       const txHash = await sendTransaction(
-        startup.contractAddress, 
+        contractAddress, 
         amount.toString()
       );
       
@@ -122,10 +142,18 @@ export default function StartupDetailPage() {
               </Button>
             </div>
             
-            <StartupDetail
-              {...startup}
-              onInvest={handleInvest}
-            />
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                <span className="ml-3">Loading startup details...</span>
+              </div>
+            ) : (
+              <StartupDetail
+                {...startup}
+                investorCount={investments?.length || 0}
+                onInvest={handleInvest}
+              />
+            )}
           </div>
         </div>
         

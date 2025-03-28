@@ -59,7 +59,7 @@ export function getMetaMaskErrorMessage(error: any): string {
   if (message.includes('insufficient funds')) {
     return 'Insufficient funds in your wallet. Please add more ETH to continue.';
   } else if (message.includes('buffer') || message.includes('out-of-bounds')) {
-    return 'Transaction format error. Please try a smaller amount (0.01 ETH or less).';
+    return 'Transaction format error. There might be an issue with the transaction data.';
   } else if (message.includes('gas')) {
     return 'Gas estimation failed. Try a smaller amount or set gas manually in MetaMask.';
   } else if (message.includes('nonce')) {
@@ -118,7 +118,7 @@ export function getMetaMaskErrorSolution(userAction: MetaMaskError['userAction']
     case 'approve':
       return 'Please try again and approve the transaction in your MetaMask wallet.';
     case 'reduce_amount':
-      return 'Try using a smaller amount for your transaction (0.01 ETH or less).';
+      return 'Try using a smaller amount for your transaction or check that you have enough ETH for gas fees.';
     case 'add_funds':
       return 'Add more ETH to your wallet and try again.';
     case 'manual_gas':
@@ -130,6 +130,6 @@ export function getMetaMaskErrorSolution(userAction: MetaMaskError['userAction']
     case 'reinstall':
       return 'Try reinstalling the MetaMask extension.';
     default:
-      return 'Please try again with a smaller amount or contact support if the issue persists.';
+      return 'Please try again or contact support if the issue persists.';
   }
 }

@@ -198,15 +198,12 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       }
 
       // Convert ETH amount to wei using ethers.js-style conversion but safer
-      // Limit to a reasonable number of ETH to prevent buffer overflow issues
-      if (parseFloat(amount) > 0.1) {
-        throw new Error("Please enter a smaller amount (0.1 ETH or less) for testing purposes");
-      }
+      // We'll handle any amount the user wants to invest
       
       // For safer conversion of ETH to Wei without using BigNumber libraries
       const convertToWei = (ethAmount: string): string => {
-        // Limit the amount to max 0.1 ETH to prevent buffer overflow issues
-        const amount = Math.min(parseFloat(ethAmount), 0.1);
+        // Use the full amount that the user wants to invest
+        const amount = parseFloat(ethAmount);
         
         // Handle very small amounts specially
         if (amount < 0.000001) {
@@ -225,13 +222,51 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
           return '0x' + weiBase.toString(16) + '00'; // Add two zeros to complete the 18 decimals
         }
         
-        // For larger amounts, limit to 5 decimal places max and use a very safe approach
-        // This avoids the string manipulation that might be causing buffer issues
-        const scaledAmount = Math.floor(amount * 1e5); // Scale by 10^5
-        const hexValue = scaledAmount.toString(16);
+        // For amounts up to 1 ETH, use a segmented approach to prevent buffer overflow
+        if (amount <= 1) {
+          // Split into integer and fractional parts
+          const integerPart = Math.floor(amount);
+          const fractionalPart = amount - integerPart;
+          
+          // Convert integer part (if any)
+          const oneEther = BigInt("1000000000000000000"); // 10^18 as a BigInt
+          let result = integerPart > 0 ? 
+                      BigInt(integerPart) * oneEther : 
+                      BigInt(0);
+          
+          // Add fractional part converted to wei
+          if (fractionalPart > 0) {
+            result += BigInt(Math.floor(fractionalPart * 1e18));
+          }
+          
+          return '0x' + result.toString(16);
+        }
         
-        // Pad with 13 zeros at the end (18 - 5 = 13 more decimal places needed)
-        return '0x' + hexValue + '0'.repeat(13);
+        // For larger amounts (> 1 ETH), use BigInt for the entire conversion
+        try {
+          // Split into integer and fractional parts (limit fractional to 6 decimal places)
+          const integerPart = Math.floor(amount);
+          const fractionalPart = Math.floor((amount - integerPart) * 1e6) / 1e6;
+          
+          // Convert integer part
+          const oneEther = BigInt("1000000000000000000"); // 10^18 as a BigInt
+          const integerWei = BigInt(integerPart) * oneEther;
+          
+          // Convert fractional part and add to result
+          const fractionalWei = fractionalPart > 0 ? 
+                              BigInt(Math.floor(fractionalPart * 1e18)) : 
+                              BigInt(0);
+          
+          const totalWei = integerWei + fractionalWei;
+          return '0x' + totalWei.toString(16);
+        } catch (e) {
+          // Fallback method if BigInt operations fail
+          console.error('BigInt conversion failed, falling back to simplified method', e);
+          const scaledAmount = Math.floor(amount);
+          const scaledHex = scaledAmount.toString(16);
+          // Approximation: we're adding 18 zeros (representing the 10^18 wei conversion)
+          return '0x' + scaledHex + '0'.repeat(18);
+        }
       };
       
       const amountHex = convertToWei(amount);

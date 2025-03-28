@@ -209,8 +209,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       if (error instanceof Error && error.message.includes("already in use")) {
         return res.status(400).json({ message: error.message });
+      } else if (error instanceof Error && error.message.includes("already been confirmed")) {
+        return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to update wallet address" });
+    }
+  });
+  
+  // Route to confirm user's wallet address (can only be done once)
+  app.post("/api/user/wallet/confirm", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const { walletAddress } = req.body;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ message: "Wallet address is required" });
+    }
+    
+    // Validate Ethereum wallet address format
+    const ethereumAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!ethereumAddressRegex.test(walletAddress)) {
+      return res.status(400).json({ message: "Invalid Ethereum wallet address format" });
+    }
+    
+    try {
+      const user = await storage.confirmUserWalletAddress(req.user.id, walletAddress);
+      // Don't send password in response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes("does not match")) {
+          return res.status(400).json({ message: error.message });
+        } else if (error.message.includes("already been confirmed")) {
+          return res.status(400).json({ message: error.message });
+        }
+      }
+      res.status(500).json({ message: "Failed to confirm wallet address" });
     }
   });
   

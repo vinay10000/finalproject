@@ -70,6 +70,18 @@ export class MongoDBStorage implements IStorage {
   
   async updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User> {
     try {
+      // First get the user to check if wallet is already confirmed
+      const user = await UserModel.findById(userId.toString());
+      
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // If wallet is already confirmed, don't allow changes
+      if (user.walletConfirmed) {
+        throw new Error("Wallet address has already been confirmed and cannot be changed");
+      }
+      
       // Check if wallet address is already in use by another user
       const existingUserWithWallet = await UserModel.findOne({ 
         walletAddress, 
@@ -94,6 +106,43 @@ export class MongoDBStorage implements IStorage {
       return documentToUser(updatedUser);
     } catch (error) {
       log(`Error updating user wallet address: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
+      throw error;
+    }
+  }
+  
+  async confirmUserWalletAddress(userId: number | string, walletAddress: string): Promise<User> {
+    try {
+      // First get the user to check conditions
+      const user = await UserModel.findById(userId.toString());
+      
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // Check if the wallet address matches the current one
+      if (user.walletAddress !== walletAddress) {
+        throw new Error("Wallet address does not match the stored address");
+      }
+      
+      // Check if wallet is already confirmed
+      if (user.walletConfirmed) {
+        throw new Error("Wallet address has already been confirmed");
+      }
+      
+      // Confirm the wallet address
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId.toString(),
+        { walletConfirmed: true },
+        { new: true } // Return the updated document
+      );
+      
+      if (!updatedUser) {
+        throw new Error("User not found");
+      }
+      
+      return documentToUser(updatedUser);
+    } catch (error) {
+      log(`Error confirming user wallet address: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       throw error;
     }
   }

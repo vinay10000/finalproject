@@ -11,6 +11,7 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   walletAddress: { type: String, sparse: true, unique: true },
+  walletConfirmed: { type: Boolean, default: false },
   userType: { type: String, required: true, enum: ['investor', 'startup'] },
   createdAt: { type: Date, default: Date.now }
 });

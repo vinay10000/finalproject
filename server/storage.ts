@@ -15,6 +15,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User>;
+  confirmUserWalletAddress(userId: number | string, walletAddress: string): Promise<User>;
   getAllUsers(): Promise<User[]>;
   
   // Startup methods
@@ -118,7 +119,8 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt,
-      walletAddress: insertUser.walletAddress || null
+      walletAddress: insertUser.walletAddress || null,
+      walletConfirmed: false
     };
     this.users.set(id, user);
     return user;
@@ -134,6 +136,11 @@ export class MemStorage implements IStorage {
       throw new Error("User not found");
     }
     
+    // If wallet is already confirmed, don't allow changes
+    if (user.walletConfirmed) {
+      throw new Error("Wallet address has already been confirmed and cannot be changed");
+    }
+    
     // Check if wallet address is already in use by another user
     const existingUserWithWallet = Array.from(this.users.values()).find(
       u => u.walletAddress === walletAddress && u.id !== numericId
@@ -147,6 +154,36 @@ export class MemStorage implements IStorage {
     const updatedUser: User = {
       ...user,
       walletAddress
+    };
+    
+    this.users.set(numericId, updatedUser);
+    return updatedUser;
+  }
+
+  async confirmUserWalletAddress(userId: number | string, walletAddress: string): Promise<User> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    // Check if the user exists
+    const user = await this.getUser(numericId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Check if the wallet address matches the current one
+    if (user.walletAddress !== walletAddress) {
+      throw new Error("Wallet address does not match the stored address");
+    }
+    
+    // Check if wallet is already confirmed
+    if (user.walletConfirmed) {
+      throw new Error("Wallet address has already been confirmed");
+    }
+    
+    // Confirm the wallet address
+    const updatedUser: User = {
+      ...user,
+      walletConfirmed: true
     };
     
     this.users.set(numericId, updatedUser);

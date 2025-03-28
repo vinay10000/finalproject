@@ -120,10 +120,12 @@ export function Header() {
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Wallet className="mr-2 h-4 w-4" />
-                  <span>Wallet</span>
-                </DropdownMenuItem>
+                <Link href="/wallet">
+                  <DropdownMenuItem>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>Wallet</span>
+                  </DropdownMenuItem>
+                </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -159,6 +161,19 @@ export function Header() {
                       </a>
                     </Link>
                   ))}
+                  <Link href="/wallet">
+                    <a
+                      className={`${
+                        location === "/wallet"
+                          ? "bg-primary-50 border-primary text-primary"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Wallet
+                    </a>
+                  </Link>
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start pl-3 text-left text-gray-600 hover:bg-gray-50 hover:text-gray-900" 

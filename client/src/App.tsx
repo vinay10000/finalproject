@@ -6,8 +6,10 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import StartupDetailPage from "@/pages/startup-detail-page";
+import TransactionsPage from "@/pages/transactions-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { MetaMaskProvider } from "@/hooks/use-metamask";
+import { TransactionsProvider } from "@/hooks/use-transactions";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -15,6 +17,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/startup/:id" component={StartupDetailPage} />
+      <ProtectedRoute path="/transactions" component={TransactionsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
@@ -26,8 +29,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <MetaMaskProvider>
-          <Router />
-          <Toaster />
+          <TransactionsProvider>
+            <Router />
+            <Toaster />
+          </TransactionsProvider>
         </MetaMaskProvider>
       </AuthProvider>
     </QueryClientProvider>

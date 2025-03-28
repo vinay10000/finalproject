@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut, User, Wallet } from "lucide-react";
+import { Menu, LogOut, User, Wallet, Activity } from "lucide-react";
 
 export function Header() {
   const [location] = useLocation();
@@ -33,7 +33,8 @@ export function Header() {
   const navItems = [
     { name: "Dashboard", href: "/" },
     { name: isInvestor ? "My Investments" : "Edit Profile", href: "#" },
-    { name: isInvestor ? "Watchlist" : "Post Updates", href: "#" }
+    { name: isInvestor ? "Watchlist" : "Post Updates", href: "#" },
+    { name: "Transactions", href: "/transactions", icon: <Activity className="mr-1 h-4 w-4" /> }
   ];
 
   const handleLogout = () => {
@@ -86,6 +87,7 @@ export function Header() {
                         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                     } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                   >
+                    {item.icon && item.icon}
                     {item.name}
                   </a>
                 </Link>
@@ -149,9 +151,10 @@ export function Header() {
                           location === item.href
                             ? "bg-primary-50 border-primary text-primary"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                        } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center`}
                         onClick={() => setIsOpen(false)}
                       >
+                        {item.icon && item.icon}
                         {item.name}
                       </a>
                     </Link>

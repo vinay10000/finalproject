@@ -51,11 +51,49 @@ export class MongoDBStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
+      // Check if a wallet address is provided and if it's already in use
+      if (insertUser.walletAddress) {
+        const existingUserWithWallet = await UserModel.findOne({ walletAddress: insertUser.walletAddress });
+        if (existingUserWithWallet) {
+          throw new Error('Wallet address is already in use by another account');
+        }
+      }
+      
       const newUser = new UserModel(insertUser);
       const savedUser = await newUser.save();
       return documentToUser(savedUser);
     } catch (error) {
       log(`Error creating user: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
+      throw error;
+    }
+  }
+  
+  async updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User> {
+    try {
+      // Check if wallet address is already in use by another user
+      const existingUserWithWallet = await UserModel.findOne({ 
+        walletAddress, 
+        _id: { $ne: userId.toString() } 
+      });
+      
+      if (existingUserWithWallet) {
+        throw new Error("Wallet address is already in use by another account");
+      }
+      
+      // Update the user's wallet address
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId.toString(),
+        { walletAddress },
+        { new: true } // Return the updated document
+      );
+      
+      if (!updatedUser) {
+        throw new Error("User not found");
+      }
+      
+      return documentToUser(updatedUser);
+    } catch (error) {
+      log(`Error updating user wallet address: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       throw error;
     }
   }

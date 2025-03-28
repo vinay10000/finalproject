@@ -10,7 +10,7 @@ const userSchema = new Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  walletAddress: { type: String },
+  walletAddress: { type: String, sparse: true, unique: true },
   userType: { type: String, required: true, enum: ['investor', 'startup'] },
   createdAt: { type: Date, default: Date.now }
 });

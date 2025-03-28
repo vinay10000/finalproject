@@ -81,6 +81,22 @@ export function setupAuth(app: Express) {
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
+      
+      // Check if wallet address is provided and already in use
+      if (req.body.walletAddress) {
+        try {
+          // Find any user with this wallet address by looping through all users
+          const users = await storage.getAllUsers();
+          const existingUserWithWallet = users.find(u => u.walletAddress === req.body.walletAddress);
+          
+          if (existingUserWithWallet) {
+            return res.status(400).json({ message: "Wallet address is already in use by another account" });
+          }
+        } catch (error) {
+          console.error("Error checking wallet address:", error);
+          // Continue with registration even if wallet check fails
+        }
+      }
 
       const user = await storage.createUser({
         ...req.body,
@@ -99,7 +115,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: "Invalid credentials" });
       

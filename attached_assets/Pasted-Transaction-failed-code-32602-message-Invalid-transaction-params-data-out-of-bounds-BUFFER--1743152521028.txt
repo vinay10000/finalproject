@@ -1,0 +1,22 @@
+Transaction failed: {code: -32602, message: 'Invalid transaction params: data out-of-bounds, BUFFER_OVERRUN.', stack: '{\n  "code": -32602,\n  "message": "Invalid transact…hfbeogaeaoehlefnkodbefgpgknn/common-1.js:1:272622'}code: -32602message: "Invalid transaction params: data out-of-bounds, BUFFER_OVERRUN."stack: "{\n  \"code\": -32602,\n  \"message\": \"Invalid transaction params: data out-of-bounds, BUFFER_OVERRUN.\",\n  \"stack\": \"Error: Invalid transaction params: data out-of-bounds, BUFFER_OVERRUN.\\n    at new o (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:5038)\\n    at i (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:8129)\\n    at Object.invalidParams (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:8635)\\n    at chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:1:41246\\n    at n.validateTxParams (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:1:41329)\\n    at Ae.addTransaction (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:5:619399)\\n    at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:1:477994\\n    at async n.addDappTransaction (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:1:475683)\\n    at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-1.js:1:55566\\n    at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-1.js:1:272622\"\n}\n  at new o (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:5038)\n  at i (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:8129)\n  at Object.invalidParams (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:1:8635)\n  at chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:1:41246\n  at n.validateTxParams (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:1:41329)\n  at Ae.addTransaction (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:5:619399)\n  at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:1:477994\n  at async n.addDappTransaction (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:1:475683)\n  at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-1.js:1:55566\n  at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-1.js:1:272622"[[Prototype]]: Object
+sendTransaction @ use-metamask.tsx:182
+await in sendTransaction
+handleInvestmentSubmit @ startup-detail-page.tsx:100
+onSubmit @ InvestmentModal.tsx:94
+(anonymous) @ chunk-YABUFNLM.js?v=daab4f6d:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=daab4f6d:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=daab4f6d:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=daab4f6d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=daab4f6d:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=daab4f6d:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=daab4f6d:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=daab4f6d:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=daab4f6d:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=daab4f6d:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=daab4f6d:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=daab4f6d:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=daab4f6d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=daab4f6d:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=daab4f6d:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=daab4f6d:5449

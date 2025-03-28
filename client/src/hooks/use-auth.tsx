@@ -16,6 +16,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  updateWalletMutation: UseMutationResult<SelectUser, Error, { walletAddress: string }>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -118,6 +119,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  const updateWalletMutation = useMutation({
+    mutationFn: async ({ walletAddress }: { walletAddress: string }) => {
+      const res = await apiRequest("PATCH", "/api/user/wallet", { walletAddress });
+      return await res.json();
+    },
+    onSuccess: (updatedUser: SelectUser) => {
+      queryClient.setQueryData(["/api/user"], updatedUser);
+      toast({
+        title: "Wallet Address Updated",
+        description: "Your MetaMask wallet has been linked to your account.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Wallet Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -128,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        updateWalletMutation,
       }}
     >
       {children}

@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
-  walletAddress: text("wallet_address"),
+  walletAddress: text("wallet_address").unique(),
   userType: text("user_type").notNull(), // 'investor' or 'startup'
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -72,7 +72,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   userType: z.enum(["investor", "startup"], {
     errorMap: () => ({ message: "User type must be either 'investor' or 'startup'" })
   }),
-  walletAddress: z.string().optional()
+  walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Please enter a valid Ethereum wallet address").optional()
 });
 
 // Schema for inserting startups

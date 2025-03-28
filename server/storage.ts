@@ -14,6 +14,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User>;
   getAllUsers(): Promise<User[]>;
   
   // Startup methods
@@ -100,6 +101,17 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Check if wallet address is provided and already exists
+    if (insertUser.walletAddress) {
+      const existingUserWithWallet = Array.from(this.users.values()).find(
+        user => user.walletAddress === insertUser.walletAddress
+      );
+      
+      if (existingUserWithWallet) {
+        throw new Error('Wallet address is already in use by another account');
+      }
+    }
+    
     const id = this.userIdCounter++;
     const createdAt = new Date();
     const user: User = { 
@@ -110,6 +122,35 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    // Check if the user exists
+    const user = await this.getUser(numericId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Check if wallet address is already in use by another user
+    const existingUserWithWallet = Array.from(this.users.values()).find(
+      u => u.walletAddress === walletAddress && u.id !== numericId
+    );
+    
+    if (existingUserWithWallet) {
+      throw new Error("Wallet address is already in use by another account");
+    }
+    
+    // Update the user's wallet address
+    const updatedUser: User = {
+      ...user,
+      walletAddress
+    };
+    
+    this.users.set(numericId, updatedUser);
+    return updatedUser;
   }
   
   async getAllUsers(): Promise<User[]> {

@@ -183,6 +183,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Route to update user's wallet address
+  app.patch("/api/user/wallet", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const { walletAddress } = req.body;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ message: "Wallet address is required" });
+    }
+    
+    // Validate Ethereum wallet address format
+    const ethereumAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!ethereumAddressRegex.test(walletAddress)) {
+      return res.status(400).json({ message: "Invalid Ethereum wallet address format" });
+    }
+    
+    try {
+      const user = await storage.updateUserWalletAddress(req.user.id, walletAddress);
+      // Don't send password in response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("already in use")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update wallet address" });
+    }
+  });
+  
   // Temporary route to get all users - REMOVE BEFORE PRODUCTION
   app.get("/api/admin/users", async (req, res) => {
     try {

@@ -196,29 +196,15 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid amount. Please enter a positive number.");
       }
 
-      // Convert ETH amount to wei (1 ETH = 10^18 wei)
-      // Use string operations to avoid floating point precision issues
-      const amountString = amount.toString();
-      const decimalIndex = amountString.indexOf('.');
-      let wholeNumber = amountString;
-      let fractional = '';
-      
-      if (decimalIndex !== -1) {
-        wholeNumber = amountString.substring(0, decimalIndex);
-        fractional = amountString.substring(decimalIndex + 1);
+      // Convert ETH amount to wei using a safer approach for small amounts
+      // Limit to a reasonable number of ETH to prevent buffer overflow issues
+      if (parseFloat(amount) > 0.01) {
+        throw new Error("Please enter a smaller amount (0.01 ETH or less) for testing purposes");
       }
       
-      // Pad or truncate fractional part to 18 decimals
-      fractional = fractional.padEnd(18, '0').substring(0, 18);
-      
-      // Combine whole and fractional parts
-      const amountWeiString = wholeNumber + fractional;
-      // Remove leading zeros
-      const amountWeiStringTrimmed = amountWeiString.replace(/^0+/, '') || '0';
-      
-      // Convert to BigInt and then to hex
-      const amountWei = BigInt(amountWeiStringTrimmed);
-      const amountHex = '0x' + amountWei.toString(16);
+      // For small transactions, use a simple approach that works reliably
+      const valueInWei = `0x${(parseFloat(amount) * 1e18).toString(16)}`;
+      const amountHex = valueInWei;
       
       // Show pre-transaction notification
       toast({

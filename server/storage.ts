@@ -1,6 +1,7 @@
-import { users, type User, type InsertUser, startups, type Startup, type InsertStartup, investments, type Investment, type InsertInvestment, updates, type Update, type InsertUpdate, milestones, type Milestone, type InsertMilestone } from "@shared/schema";
+import { type User, type InsertUser, type Startup, type InsertStartup, type Investment, type InsertInvestment, type Update, type InsertUpdate, type Milestone, type InsertMilestone } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { log } from "./vite";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -42,7 +43,7 @@ export interface IStorage {
   updateMilestoneStatus(id: number, completed: boolean): Promise<Milestone>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -51,7 +52,7 @@ export class MemStorage implements IStorage {
   private investments: Map<number, Investment>;
   private updates: Map<number, Update>;
   private milestones: Map<number, Milestone>;
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
   
   private userIdCounter: number;
   private startupIdCounter: number;
@@ -97,7 +98,12 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const createdAt = new Date();
-    const user: User = { ...insertUser, id, createdAt };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt,
+      walletAddress: insertUser.walletAddress || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -124,7 +130,10 @@ export class MemStorage implements IStorage {
       ...insertStartup, 
       id, 
       createdAt, 
-      currentFunding: insertStartup.currentFunding || 0
+      currentFunding: 0,
+      location: insertStartup.location || null,
+      logoUrl: insertStartup.logoUrl || null,
+      pitchDeckUrl: insertStartup.pitchDeckUrl || null
     };
     this.startups.set(id, startup);
     return startup;
@@ -136,9 +145,11 @@ export class MemStorage implements IStorage {
       throw new Error("Startup not found");
     }
     
+    const currentFunding = startup.currentFunding || 0;
+    
     const updatedStartup: Startup = {
       ...startup,
-      currentFunding: startup.currentFunding + amount
+      currentFunding: currentFunding + amount
     };
     
     this.startups.set(startupId, updatedStartup);
@@ -215,7 +226,9 @@ export class MemStorage implements IStorage {
       ...insertMilestone, 
       id, 
       createdAt, 
-      completed: false 
+      completed: false,
+      description: insertMilestone.description || null,
+      targetDate: insertMilestone.targetDate || null
     };
     this.milestones.set(id, milestone);
     return milestone;
@@ -237,4 +250,19 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Import our MongoDB storage implementation
+import { MongoDBStorage } from './db/mongodb-storage';
+
+// Determine which storage implementation to use
+let storageImplementation: IStorage;
+
+// Check if we have a MongoDB URI configuration
+if (process.env.USE_MONGODB === 'true' && process.env.MONGODB_URI) {
+  log('Using MongoDB storage implementation', 'storage');
+  storageImplementation = new MongoDBStorage();
+} else {
+  log('Using in-memory storage implementation', 'storage');
+  storageImplementation = new MemStorage();
+}
+
+export const storage = storageImplementation;

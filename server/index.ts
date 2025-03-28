@@ -1,6 +1,11 @@
+import dotenv from "dotenv";
+// Load environment variables from .env file
+dotenv.config();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { connectToMongoDB } from "./db/mongodb";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +42,25 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Connect to MongoDB if needed
+  if (process.env.USE_MONGODB === 'true' && process.env.MONGODB_URI) {
+    log(`Attempting to connect to MongoDB with URI: ${process.env.MONGODB_URI.substring(0, 20)}...`, 'server');
+    try {
+      await connectToMongoDB();
+      log('Connected to MongoDB successfully', 'server');
+    } catch (error) {
+      log(`Failed to connect to MongoDB: ${error instanceof Error ? error.message : String(error)}`, 'server');
+      log('Falling back to in-memory storage', 'server');
+    }
+  } else {
+    if (!process.env.MONGODB_URI) {
+      log('MONGODB_URI environment variable is not set', 'server');
+    }
+    if (process.env.USE_MONGODB !== 'true') {
+      log('USE_MONGODB is not set to true', 'server');
+    }
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -8,6 +8,8 @@ export type StartupCardProps = {
   id: number;
   name: string;
   logoUrl?: string;
+  photoUrl?: string;
+  videoUrl?: string;
   category: string;
   fundingStage: string;
   description: string;
@@ -19,6 +21,8 @@ export function StartupCard({
   id,
   name,
   logoUrl,
+  photoUrl,
+  videoUrl,
   category,
   fundingStage,
   description,
@@ -59,6 +63,16 @@ export function StartupCard({
             </div>
           </div>
         </div>
+        
+        {photoUrl && (
+          <div className="mt-4">
+            <img 
+              src={photoUrl} 
+              alt={`${name} featured image`} 
+              className="w-full h-48 object-cover rounded-md"
+            />
+          </div>
+        )}
         
         <div className="mt-4">
           <p className="text-sm text-gray-500 line-clamp-3">

@@ -20,8 +20,10 @@ export async function connectToMongoDB(): Promise<typeof mongoose> {
   
   try {
     connectionPromise = mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000, // 5 seconds timeout
-      connectTimeoutMS: 10000 // 10 seconds connection timeout
+      serverSelectionTimeoutMS: 30000, // 30 seconds timeout
+      connectTimeoutMS: 30000, // 30 seconds connection timeout
+      socketTimeoutMS: 45000, // 45 seconds socket timeout
+      heartbeatFrequencyMS: 10000 // Heartbeat frequency
     })
       .then((mongoose) => {
         log(`Successfully connected to MongoDB`, 'mongodb');

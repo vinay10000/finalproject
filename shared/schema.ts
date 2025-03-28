@@ -27,6 +27,8 @@ export const startups = pgTable("startups", {
   currentFunding: doublePrecision("current_funding").default(0),
   logoUrl: text("logo_url"),
   pitchDeckUrl: text("pitch_deck_url"),
+  photoUrl: text("photo_url"),
+  videoUrl: text("video_url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -87,6 +89,8 @@ export const insertStartupSchema = createInsertSchema(startups).pick({
   fundingGoal: true,
   logoUrl: true,
   pitchDeckUrl: true,
+  photoUrl: true,
+  videoUrl: true,
 });
 
 // Schema for inserting investments

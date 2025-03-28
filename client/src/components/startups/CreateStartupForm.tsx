@@ -40,6 +40,8 @@ const formSchema = insertStartupSchema.omit({ userId: true }).extend({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(30, "Description must be at least 30 characters"),
   fundingGoal: z.coerce.number().min(1, "Funding goal must be at least 1"),
+  photoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
+  videoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
 });
 
 type CreateStartupFormData = z.infer<typeof formSchema>;
@@ -63,6 +65,8 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
       fundingGoal: 100,
       logoUrl: "",
       pitchDeckUrl: "",
+      photoUrl: "",
+      videoUrl: "",
     },
   });
 
@@ -267,6 +271,36 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
                     <Input placeholder="https://example.com/pitch-deck.pdf" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
                   </FormControl>
                   <FormDescription>A URL to your startup's pitch deck or presentation.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="photoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Photo URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com/startup-photo.jpg" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                  </FormControl>
+                  <FormDescription>A URL to a featured photo for your startup.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="videoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Video URL (Max 5MB, Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com/startup-video.mp4" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                  </FormControl>
+                  <FormDescription>A URL to a promotional video (maximum 5MB).</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

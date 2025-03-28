@@ -42,20 +42,24 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Connect to MongoDB if the URI is provided
+  // Start MongoDB connection attempt but don't wait for it
   if (process.env.MONGODB_URI) {
     log(`Attempting to connect to MongoDB with URI: ${process.env.MONGODB_URI.substring(0, 20)}...`, 'server');
-    try {
-      await connectToMongoDB();
-      log('Connected to MongoDB successfully', 'server');
-    } catch (error) {
-      log(`Failed to connect to MongoDB: ${error instanceof Error ? error.message : String(error)}`, 'server');
-      log('Falling back to in-memory storage', 'server');
-    }
+    
+    // Set up MongoDB connection in background
+    connectToMongoDB()
+      .then(() => {
+        log('Connected to MongoDB successfully', 'server');
+      })
+      .catch((error) => {
+        log(`Failed to connect to MongoDB: ${error instanceof Error ? error.message : String(error)}`, 'server');
+        log('Falling back to in-memory storage', 'server');
+      });
   } else {
     log('MONGODB_URI environment variable is not set, using in-memory storage', 'server');
   }
   
+  // Continue with server setup immediately without waiting for MongoDB
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

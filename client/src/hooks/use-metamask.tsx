@@ -196,15 +196,44 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid amount. Please enter a positive number.");
       }
 
-      // Convert ETH amount to wei using a safer approach for small amounts
+      // Convert ETH amount to wei using ethers.js-style conversion but safer
       // Limit to a reasonable number of ETH to prevent buffer overflow issues
-      if (parseFloat(amount) > 0.01) {
-        throw new Error("Please enter a smaller amount (0.01 ETH or less) for testing purposes");
+      if (parseFloat(amount) > 0.1) {
+        throw new Error("Please enter a smaller amount (0.1 ETH or less) for testing purposes");
       }
       
-      // For small transactions, use a simple approach that works reliably
-      const valueInWei = `0x${(parseFloat(amount) * 1e18).toString(16)}`;
-      const amountHex = valueInWei;
+      // For safer conversion of ETH to Wei without using BigNumber libraries
+      const convertToWei = (ethAmount: string): string => {
+        // Limit the amount to max 0.1 ETH to prevent buffer overflow issues
+        const amount = Math.min(parseFloat(ethAmount), 0.1);
+        
+        // Handle very small amounts specially
+        if (amount < 0.000001) {
+          return '0x0'; // Extremely small amounts become 0
+        }
+        
+        // For very small amounts (but not zero), use a simple fixed conversion
+        if (amount <= 0.0001) {
+          const weiValue = Math.floor(amount * 1e18);
+          return '0x' + weiValue.toString(16);
+        }
+        
+        // For modest amounts, use a simple conversion that's less likely to overflow
+        if (amount <= 0.01) {
+          const weiBase = Math.floor(amount * 1e16); // Scale by 10^16 instead of 10^18
+          return '0x' + weiBase.toString(16) + '00'; // Add two zeros to complete the 18 decimals
+        }
+        
+        // For larger amounts, limit to 5 decimal places max and use a very safe approach
+        // This avoids the string manipulation that might be causing buffer issues
+        const scaledAmount = Math.floor(amount * 1e5); // Scale by 10^5
+        const hexValue = scaledAmount.toString(16);
+        
+        // Pad with 13 zeros at the end (18 - 5 = 13 more decimal places needed)
+        return '0x' + hexValue + '0'.repeat(13);
+      };
+      
+      const amountHex = convertToWei(amount);
       
       // Show pre-transaction notification
       toast({

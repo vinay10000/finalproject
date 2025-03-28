@@ -28,7 +28,9 @@ const DEFAULT_STARTUP: StartupDetailProps = {
   team: [],
   milestones: [],
   onInvest: () => {},
-  contractAddress: "0x0000000000000000000000000000000000000000"
+  contractAddress: "0x0000000000000000000000000000000000000000",
+  photoUrl: undefined,
+  videoUrl: undefined
 };
 
 export default function StartupDetailPage() {
@@ -78,6 +80,8 @@ export default function StartupDetailPage() {
       daysLeft: 30, // Default value as it's not in the API
       location: apiStartup.location || undefined,
       logoUrl: apiStartup.logoUrl || undefined,
+      photoUrl: apiStartup.photoUrl || undefined,
+      videoUrl: apiStartup.videoUrl || undefined,
       team: [], // No team data in the API yet
       milestones: [], // No milestone data in the API yet
       onInvest: handleInvest,

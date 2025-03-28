@@ -19,6 +19,8 @@ export type StartupDetailProps = {
   id: number;
   name: string;
   logoUrl?: string;
+  photoUrl?: string;
+  videoUrl?: string;
   category: string;
   fundingStage: string;
   location?: string;
@@ -45,6 +47,8 @@ export type StartupDetailProps = {
 export function StartupDetail({
   name,
   logoUrl,
+  photoUrl,
+  videoUrl,
   category,
   fundingStage,
   location,
@@ -109,6 +113,16 @@ export function StartupDetail({
           {/* Company Overview */}
           <Card>
             <CardContent className="p-6">
+              {photoUrl && (
+                <div className="mb-6">
+                  <img 
+                    src={photoUrl} 
+                    alt={`${name} featured image`} 
+                    className="w-full h-64 object-cover rounded-md"
+                  />
+                </div>
+              )}
+              
               <h2 className="text-lg font-medium text-gray-900 mb-4">Company Overview</h2>
               <p className={`text-gray-600 ${!expandedDescription && 'line-clamp-4'}`}>
                 {description}
@@ -121,6 +135,20 @@ export function StartupDetail({
                 >
                   {expandedDescription ? "Show less" : "Read more"}
                 </Button>
+              )}
+              
+              {videoUrl && (
+                <div className="mt-6">
+                  <h3 className="text-md font-medium text-gray-900 mb-2">Promotional Video</h3>
+                  <video 
+                    src={videoUrl} 
+                    controls
+                    className="w-full rounded-md"
+                    style={{ maxHeight: "360px" }}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               )}
 
               {/* Team Section */}

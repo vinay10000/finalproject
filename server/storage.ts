@@ -309,7 +309,9 @@ export class MemStorage implements IStorage {
       currentFunding: 0,
       location: insertStartup.location || null,
       logoUrl: insertStartup.logoUrl || null,
-      pitchDeckUrl: insertStartup.pitchDeckUrl || null
+      pitchDeckUrl: insertStartup.pitchDeckUrl || null,
+      photoUrl: insertStartup.photoUrl || null,
+      videoUrl: insertStartup.videoUrl || null
     };
     this.startups.set(id, startup);
     return startup;

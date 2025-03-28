@@ -11,11 +11,26 @@ export class MongoDBStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = MongoStore.create({
-      clientPromise: getMongoDBConnection().then(mongoose => mongoose.connection.getClient()),
-      ttl: 14 * 24 * 60 * 60, // 14 days in seconds
-      autoRemove: 'native'
-    });
+    try {
+      this.sessionStore = MongoStore.create({
+        clientPromise: getMongoDBConnection()
+          .then(mongoose => mongoose.connection.getClient())
+          .catch(err => {
+            log(`Session store error: ${err.message}`, 'mongodb');
+            throw err;
+          }),
+        ttl: 14 * 24 * 60 * 60, // 14 days in seconds
+        autoRemove: 'native',
+        touchAfter: 24 * 3600 // Only update session once per day to reduce writes
+      });
+    } catch (error) {
+      log(`Error creating MongoDB session store: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
+      // Create a fallback memory store to ensure the application can still run
+      const MemoryStore = require('memorystore')(session);
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // Clear expired sessions every 24h
+      });
+    }
   }
   
   async updateUserEmail(userId: number | string, email: string): Promise<User> {
@@ -260,7 +275,9 @@ export class MongoDBStorage implements IStorage {
     try {
       const newStartup = new StartupModel({
         ...insertStartup,
-        currentFunding: 0
+        currentFunding: 0,
+        photoUrl: insertStartup.photoUrl || null,
+        videoUrl: insertStartup.videoUrl || null
       });
       const savedStartup = await newStartup.save();
       return documentToStartup(savedStartup);

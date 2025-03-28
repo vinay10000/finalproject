@@ -33,6 +33,8 @@ const startupSchema = new Schema({
   currentFunding: { type: Number, default: 0 },
   logoUrl: { type: String },
   pitchDeckUrl: { type: String },
+  photoUrl: { type: String },
+  videoUrl: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -71,9 +71,11 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getStartup(id: number): Promise<Startup | undefined> {
+  async getStartup(id: number | string): Promise<Startup | undefined> {
     try {
-      const startup = await StartupModel.findById(id);
+      // Convert numeric id to string if needed
+      const idString = id.toString();
+      const startup = await StartupModel.findById(idString);
       return startup ? documentToStartup(startup) : undefined;
     } catch (error) {
       log(`Error getting startup by ID: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
@@ -105,10 +107,13 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async updateStartupFunding(startupId: number, amount: number): Promise<Startup> {
+  async updateStartupFunding(startupId: number | string, amount: number): Promise<Startup> {
     try {
+      // Convert numeric id to string if needed
+      const idString = startupId.toString();
+      
       const startup = await StartupModel.findByIdAndUpdate(
-        startupId,
+        idString,
         { $inc: { currentFunding: amount } },
         { new: true }
       );
@@ -135,9 +140,11 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getInvestment(id: number): Promise<Investment | undefined> {
+  async getInvestment(id: number | string): Promise<Investment | undefined> {
     try {
-      const investment = await InvestmentModel.findById(id);
+      // Convert numeric id to string if needed
+      const idString = id.toString();
+      const investment = await InvestmentModel.findById(idString);
       return investment ? documentToInvestment(investment) : undefined;
     } catch (error) {
       log(`Error getting investment by ID: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');

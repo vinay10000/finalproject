@@ -42,8 +42,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Connect to MongoDB if needed
-  if (process.env.USE_MONGODB === 'true' && process.env.MONGODB_URI) {
+  // Connect to MongoDB if the URI is provided
+  if (process.env.MONGODB_URI) {
     log(`Attempting to connect to MongoDB with URI: ${process.env.MONGODB_URI.substring(0, 20)}...`, 'server');
     try {
       await connectToMongoDB();
@@ -53,12 +53,7 @@ app.use((req, res, next) => {
       log('Falling back to in-memory storage', 'server');
     }
   } else {
-    if (!process.env.MONGODB_URI) {
-      log('MONGODB_URI environment variable is not set', 'server');
-    }
-    if (process.env.USE_MONGODB !== 'true') {
-      log('USE_MONGODB is not set to true', 'server');
-    }
+    log('MONGODB_URI environment variable is not set, using in-memory storage', 'server');
   }
   
   const server = await registerRoutes(app);

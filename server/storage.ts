@@ -17,14 +17,14 @@ export interface IStorage {
   
   // Startup methods
   getStartups(): Promise<Startup[]>;
-  getStartup(id: number): Promise<Startup | undefined>;
+  getStartup(id: number | string): Promise<Startup | undefined>;
   getStartupByUserId(userId: number): Promise<Startup | undefined>;
   createStartup(startup: InsertStartup): Promise<Startup>;
-  updateStartupFunding(startupId: number, amount: number): Promise<Startup>;
+  updateStartupFunding(startupId: number | string, amount: number): Promise<Startup>;
   
   // Investment methods
   getInvestments(): Promise<Investment[]>;
-  getInvestment(id: number): Promise<Investment | undefined>;
+  getInvestment(id: number | string): Promise<Investment | undefined>;
   getUserInvestments(userId: number): Promise<Investment[]>;
   getStartupInvestments(startupId: number): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
@@ -113,8 +113,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.startups.values());
   }
   
-  async getStartup(id: number): Promise<Startup | undefined> {
-    return this.startups.get(id);
+  async getStartup(id: number | string): Promise<Startup | undefined> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    return this.startups.get(numericId);
   }
   
   async getStartupByUserId(userId: number): Promise<Startup | undefined> {
@@ -139,8 +141,11 @@ export class MemStorage implements IStorage {
     return startup;
   }
   
-  async updateStartupFunding(startupId: number, amount: number): Promise<Startup> {
-    const startup = await this.getStartup(startupId);
+  async updateStartupFunding(startupId: number | string, amount: number): Promise<Startup> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof startupId === 'string' ? parseInt(startupId) : startupId;
+    
+    const startup = await this.getStartup(numericId);
     if (!startup) {
       throw new Error("Startup not found");
     }
@@ -152,7 +157,7 @@ export class MemStorage implements IStorage {
       currentFunding: currentFunding + amount
     };
     
-    this.startups.set(startupId, updatedStartup);
+    this.startups.set(numericId, updatedStartup);
     return updatedStartup;
   }
   
@@ -161,8 +166,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.investments.values());
   }
   
-  async getInvestment(id: number): Promise<Investment | undefined> {
-    return this.investments.get(id);
+  async getInvestment(id: number | string): Promise<Investment | undefined> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    return this.investments.get(numericId);
   }
   
   async getUserInvestments(userId: number): Promise<Investment[]> {
@@ -256,8 +263,8 @@ import { MongoDBStorage } from './db/mongodb-storage';
 // Determine which storage implementation to use
 let storageImplementation: IStorage;
 
-// Check if we have a MongoDB URI configuration
-if (process.env.USE_MONGODB === 'true' && process.env.MONGODB_URI) {
+// Check if we have a MongoDB URI configuration and prioritize it
+if (process.env.MONGODB_URI) {
   log('Using MongoDB storage implementation', 'storage');
   storageImplementation = new MongoDBStorage();
 } else {

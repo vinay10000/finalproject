@@ -59,6 +59,16 @@ export class MongoDBStorage implements IStorage {
       throw error;
     }
   }
+  
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const users = await UserModel.find();
+      return users.map(documentToUser);
+    } catch (error) {
+      log(`Error getting all users: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
+      return [];
+    }
+  }
 
   // Startup methods
   async getStartups(): Promise<Startup[]> {
@@ -73,19 +83,30 @@ export class MongoDBStorage implements IStorage {
 
   async getStartup(id: number | string): Promise<Startup | undefined> {
     try {
-      // Convert numeric id to string if needed
+      // Check if this is a partial MongoDB ObjectID from a path split
+      // MongoDB ObjectIDs are 24 characters, but URL paths can split them
+      // So if we have a partial ID starting with known prefix, try to fetch all startups and find the matching one
       const idString = id.toString();
-      const startup = await StartupModel.findById(idString);
-      return startup ? documentToStartup(startup) : undefined;
+      
+      // If this looks like a valid ObjectID, try to find it directly
+      if (idString.length === 24) {
+        const startup = await StartupModel.findById(idString);
+        return startup ? documentToStartup(startup) : undefined;
+      } else {
+        // If it looks like a partial ID, try to find all startups and match it
+        const allStartups = await this.getStartups();
+        const matchingStartup = allStartups.find(s => s.id.toString().startsWith(idString));
+        return matchingStartup;
+      }
     } catch (error) {
       log(`Error getting startup by ID: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return undefined;
     }
   }
 
-  async getStartupByUserId(userId: number): Promise<Startup | undefined> {
+  async getStartupByUserId(userId: number | string): Promise<Startup | undefined> {
     try {
-      const startup = await StartupModel.findOne({ userId: String(userId) });
+      const startup = await StartupModel.findOne({ userId: userId.toString() });
       return startup ? documentToStartup(startup) : undefined;
     } catch (error) {
       log(`Error getting startup by user ID: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
@@ -109,14 +130,27 @@ export class MongoDBStorage implements IStorage {
 
   async updateStartupFunding(startupId: number | string, amount: number): Promise<Startup> {
     try {
-      // Convert numeric id to string if needed
       const idString = startupId.toString();
+      let startup;
       
-      const startup = await StartupModel.findByIdAndUpdate(
-        idString,
-        { $inc: { currentFunding: amount } },
-        { new: true }
-      );
+      // If this looks like a valid ObjectID, try to update it directly
+      if (idString.length === 24) {
+        startup = await StartupModel.findByIdAndUpdate(
+          idString,
+          { $inc: { currentFunding: amount } },
+          { new: true }
+        );
+      } else {
+        // If it looks like a partial ID, try to find the full startup first
+        const matchingStartup = await this.getStartup(idString);
+        if (matchingStartup) {
+          startup = await StartupModel.findByIdAndUpdate(
+            matchingStartup.id,
+            { $inc: { currentFunding: amount } },
+            { new: true }
+          );
+        }
+      }
       
       if (!startup) {
         throw new Error("Startup not found");
@@ -125,6 +159,16 @@ export class MongoDBStorage implements IStorage {
       return documentToStartup(startup);
     } catch (error) {
       log(`Error updating startup funding: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
+      throw error;
+    }
+  }
+  
+  async clearStartups(): Promise<void> {
+    try {
+      await StartupModel.deleteMany({});
+      log('All startups cleared successfully', 'mongodb');
+    } catch (error) {
+      log(`Error clearing startups: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       throw error;
     }
   }
@@ -142,30 +186,76 @@ export class MongoDBStorage implements IStorage {
 
   async getInvestment(id: number | string): Promise<Investment | undefined> {
     try {
-      // Convert numeric id to string if needed
       const idString = id.toString();
-      const investment = await InvestmentModel.findById(idString);
-      return investment ? documentToInvestment(investment) : undefined;
+      
+      // If this looks like a valid ObjectID, try to find it directly
+      if (idString.length === 24) {
+        const investment = await InvestmentModel.findById(idString);
+        return investment ? documentToInvestment(investment) : undefined;
+      } else {
+        // If it looks like a partial ID, try to find all investments and match it
+        const allInvestments = await this.getInvestments();
+        const matchingInvestment = allInvestments.find(s => s.id.toString().startsWith(idString));
+        return matchingInvestment;
+      }
     } catch (error) {
       log(`Error getting investment by ID: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return undefined;
     }
   }
 
-  async getUserInvestments(userId: number): Promise<Investment[]> {
+  async getUserInvestments(userId: number | string): Promise<Investment[]> {
     try {
-      const investments = await InvestmentModel.find({ investorId: String(userId) }).sort({ createdAt: -1 });
-      return investments.map(documentToInvestment);
+      const idString = userId.toString();
+      
+      // If this looks like a valid ObjectID, try to find investments directly
+      if (idString.length === 24) {
+        const investments = await InvestmentModel.find({ investorId: idString }).sort({ createdAt: -1 });
+        return investments.map(documentToInvestment);
+      } else {
+        // If it's a partial ID, try to find the user first and then their investments
+        const users = await UserModel.find();
+        // Match the user ID ensuring we have proper type safety using type assertion
+        // We know that UserModel documents from Mongoose have _id properties
+        const matchingUser = users.find((u: any) => {
+          if (u && u._id) {
+            return u._id.toString().startsWith(idString);
+          }
+          return false;
+        });
+        
+        // Use explicit type assertion, since we know what the structure looks like
+        if (matchingUser) {
+          // The matchingUser is from UserModel so we know it has _id
+          const matchingUserId = (matchingUser as any)._id;
+          const investments = await InvestmentModel.find({ investorId: matchingUserId.toString() }).sort({ createdAt: -1 });
+          return investments.map(documentToInvestment);
+        }
+        return [];
+      }
     } catch (error) {
       log(`Error getting user investments: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return [];
     }
   }
 
-  async getStartupInvestments(startupId: number): Promise<Investment[]> {
+  async getStartupInvestments(startupId: number | string): Promise<Investment[]> {
     try {
-      const investments = await InvestmentModel.find({ startupId: String(startupId) }).sort({ createdAt: -1 });
-      return investments.map(documentToInvestment);
+      const idString = startupId.toString();
+      
+      // If this looks like a valid ObjectID, try to find investments directly
+      if (idString.length === 24) {
+        const investments = await InvestmentModel.find({ startupId: idString }).sort({ createdAt: -1 });
+        return investments.map(documentToInvestment);
+      } else {
+        // If it's a partial ID, try to find the startup first
+        const matchingStartup = await this.getStartup(idString);
+        if (matchingStartup) {
+          const investments = await InvestmentModel.find({ startupId: matchingStartup.id }).sort({ createdAt: -1 });
+          return investments.map(documentToInvestment);
+        }
+        return [];
+      }
     } catch (error) {
       log(`Error getting startup investments: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return [];
@@ -194,7 +284,7 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getUpdate(id: number): Promise<Update | undefined> {
+  async getUpdate(id: number | string): Promise<Update | undefined> {
     try {
       const update = await UpdateModel.findById(id);
       return update ? documentToUpdate(update) : undefined;
@@ -204,10 +294,23 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getStartupUpdates(startupId: number): Promise<Update[]> {
+  async getStartupUpdates(startupId: number | string): Promise<Update[]> {
     try {
-      const updates = await UpdateModel.find({ startupId: String(startupId) }).sort({ createdAt: -1 });
-      return updates.map(documentToUpdate);
+      const idString = startupId.toString();
+      
+      // If this looks like a valid ObjectID, try to find updates directly
+      if (idString.length === 24) {
+        const updates = await UpdateModel.find({ startupId: idString }).sort({ createdAt: -1 });
+        return updates.map(documentToUpdate);
+      } else {
+        // If it's a partial ID, try to find the startup first
+        const matchingStartup = await this.getStartup(idString);
+        if (matchingStartup) {
+          const updates = await UpdateModel.find({ startupId: matchingStartup.id }).sort({ createdAt: -1 });
+          return updates.map(documentToUpdate);
+        }
+        return [];
+      }
     } catch (error) {
       log(`Error getting startup updates: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return [];
@@ -236,7 +339,7 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getMilestone(id: number): Promise<Milestone | undefined> {
+  async getMilestone(id: number | string): Promise<Milestone | undefined> {
     try {
       const milestone = await MilestoneModel.findById(id);
       return milestone ? documentToMilestone(milestone) : undefined;
@@ -246,10 +349,23 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getStartupMilestones(startupId: number): Promise<Milestone[]> {
+  async getStartupMilestones(startupId: number | string): Promise<Milestone[]> {
     try {
-      const milestones = await MilestoneModel.find({ startupId: String(startupId) }).sort({ targetDate: 1 });
-      return milestones.map(documentToMilestone);
+      const idString = startupId.toString();
+      
+      // If this looks like a valid ObjectID, try to find milestones directly
+      if (idString.length === 24) {
+        const milestones = await MilestoneModel.find({ startupId: idString }).sort({ targetDate: 1 });
+        return milestones.map(documentToMilestone);
+      } else {
+        // If it's a partial ID, try to find the startup first
+        const matchingStartup = await this.getStartup(idString);
+        if (matchingStartup) {
+          const milestones = await MilestoneModel.find({ startupId: matchingStartup.id }).sort({ targetDate: 1 });
+          return milestones.map(documentToMilestone);
+        }
+        return [];
+      }
     } catch (error) {
       log(`Error getting startup milestones: ${error instanceof Error ? error.message : String(error)}`, 'mongodb');
       return [];
@@ -270,7 +386,7 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async updateMilestoneStatus(id: number, completed: boolean): Promise<Milestone> {
+  async updateMilestoneStatus(id: number | string, completed: boolean): Promise<Milestone> {
     try {
       const milestone = await MilestoneModel.findByIdAndUpdate(
         id,

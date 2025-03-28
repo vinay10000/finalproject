@@ -10,37 +10,39 @@ const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: number | string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   // Startup methods
   getStartups(): Promise<Startup[]>;
   getStartup(id: number | string): Promise<Startup | undefined>;
-  getStartupByUserId(userId: number): Promise<Startup | undefined>;
+  getStartupByUserId(userId: number | string): Promise<Startup | undefined>;
   createStartup(startup: InsertStartup): Promise<Startup>;
   updateStartupFunding(startupId: number | string, amount: number): Promise<Startup>;
+  clearStartups(): Promise<void>;
   
   // Investment methods
   getInvestments(): Promise<Investment[]>;
   getInvestment(id: number | string): Promise<Investment | undefined>;
-  getUserInvestments(userId: number): Promise<Investment[]>;
-  getStartupInvestments(startupId: number): Promise<Investment[]>;
+  getUserInvestments(userId: number | string): Promise<Investment[]>;
+  getStartupInvestments(startupId: number | string): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
   
   // Update methods
   getUpdates(): Promise<Update[]>;
-  getUpdate(id: number): Promise<Update | undefined>;
-  getStartupUpdates(startupId: number): Promise<Update[]>;
+  getUpdate(id: number | string): Promise<Update | undefined>;
+  getStartupUpdates(startupId: number | string): Promise<Update[]>;
   createUpdate(update: InsertUpdate): Promise<Update>;
   
   // Milestone methods
   getMilestones(): Promise<Milestone[]>;
-  getMilestone(id: number): Promise<Milestone | undefined>;
-  getStartupMilestones(startupId: number): Promise<Milestone[]>;
+  getMilestone(id: number | string): Promise<Milestone | undefined>;
+  getStartupMilestones(startupId: number | string): Promise<Milestone[]>;
   createMilestone(milestone: InsertMilestone): Promise<Milestone>;
-  updateMilestoneStatus(id: number, completed: boolean): Promise<Milestone>;
+  updateMilestoneStatus(id: number | string, completed: boolean): Promise<Milestone>;
   
   // Session store
   sessionStore: session.Store;
@@ -79,8 +81,10 @@ export class MemStorage implements IStorage {
   }
 
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUser(id: number | string): Promise<User | undefined> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    return this.users.get(numericId);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -108,6 +112,10 @@ export class MemStorage implements IStorage {
     return user;
   }
   
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
   // Startup methods
   async getStartups(): Promise<Startup[]> {
     return Array.from(this.startups.values());
@@ -119,9 +127,11 @@ export class MemStorage implements IStorage {
     return this.startups.get(numericId);
   }
   
-  async getStartupByUserId(userId: number): Promise<Startup | undefined> {
+  async getStartupByUserId(userId: number | string): Promise<Startup | undefined> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
     return Array.from(this.startups.values()).find(
-      (startup) => startup.userId === userId
+      (startup) => startup.userId === numericId
     );
   }
   
@@ -161,6 +171,11 @@ export class MemStorage implements IStorage {
     return updatedStartup;
   }
   
+  async clearStartups(): Promise<void> {
+    this.startups.clear();
+    this.startupIdCounter = 1;
+  }
+  
   // Investment methods
   async getInvestments(): Promise<Investment[]> {
     return Array.from(this.investments.values());
@@ -172,14 +187,18 @@ export class MemStorage implements IStorage {
     return this.investments.get(numericId);
   }
   
-  async getUserInvestments(userId: number): Promise<Investment[]> {
+  async getUserInvestments(userId: number | string): Promise<Investment[]> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
     return Array.from(this.investments.values())
-      .filter(investment => investment.investorId === userId);
+      .filter(investment => investment.investorId === numericId);
   }
   
-  async getStartupInvestments(startupId: number): Promise<Investment[]> {
+  async getStartupInvestments(startupId: number | string): Promise<Investment[]> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof startupId === 'string' ? parseInt(startupId) : startupId;
     return Array.from(this.investments.values())
-      .filter(investment => investment.startupId === startupId);
+      .filter(investment => investment.startupId === numericId);
   }
   
   async createInvestment(insertInvestment: InsertInvestment): Promise<Investment> {
@@ -195,13 +214,17 @@ export class MemStorage implements IStorage {
     return Array.from(this.updates.values());
   }
   
-  async getUpdate(id: number): Promise<Update | undefined> {
-    return this.updates.get(id);
+  async getUpdate(id: number | string): Promise<Update | undefined> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    return this.updates.get(numericId);
   }
   
-  async getStartupUpdates(startupId: number): Promise<Update[]> {
+  async getStartupUpdates(startupId: number | string): Promise<Update[]> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof startupId === 'string' ? parseInt(startupId) : startupId;
     return Array.from(this.updates.values())
-      .filter(update => update.startupId === startupId);
+      .filter(update => update.startupId === numericId);
   }
   
   async createUpdate(insertUpdate: InsertUpdate): Promise<Update> {
@@ -217,13 +240,17 @@ export class MemStorage implements IStorage {
     return Array.from(this.milestones.values());
   }
   
-  async getMilestone(id: number): Promise<Milestone | undefined> {
-    return this.milestones.get(id);
+  async getMilestone(id: number | string): Promise<Milestone | undefined> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    return this.milestones.get(numericId);
   }
   
-  async getStartupMilestones(startupId: number): Promise<Milestone[]> {
+  async getStartupMilestones(startupId: number | string): Promise<Milestone[]> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof startupId === 'string' ? parseInt(startupId) : startupId;
     return Array.from(this.milestones.values())
-      .filter(milestone => milestone.startupId === startupId);
+      .filter(milestone => milestone.startupId === numericId);
   }
   
   async createMilestone(insertMilestone: InsertMilestone): Promise<Milestone> {
@@ -241,8 +268,11 @@ export class MemStorage implements IStorage {
     return milestone;
   }
   
-  async updateMilestoneStatus(id: number, completed: boolean): Promise<Milestone> {
-    const milestone = await this.getMilestone(id);
+  async updateMilestoneStatus(id: number | string, completed: boolean): Promise<Milestone> {
+    // For MemStorage, convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    
+    const milestone = await this.getMilestone(numericId);
     if (!milestone) {
       throw new Error("Milestone not found");
     }
@@ -252,7 +282,7 @@ export class MemStorage implements IStorage {
       completed
     };
     
-    this.milestones.set(id, updatedMilestone);
+    this.milestones.set(numericId, updatedMilestone);
     return updatedMilestone;
   }
 }

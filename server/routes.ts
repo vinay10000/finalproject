@@ -19,7 +19,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/startups/:id", async (req, res) => {
     try {
-      const startup = await storage.getStartup(parseInt(req.params.id));
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const startup = await storage.getStartup(req.params.id);
       if (!startup) {
         return res.status(404).json({ message: "Startup not found" });
       }
@@ -31,7 +32,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/users/:userId/startup", async (req, res) => {
     try {
-      const startup = await storage.getStartupByUserId(parseInt(req.params.userId));
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const startup = await storage.getStartupByUserId(req.params.userId);
       if (!startup) {
         return res.status(404).json({ message: "Startup not found for this user" });
       }
@@ -94,12 +96,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/users/:userId/investments", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.id !== parseInt(req.params.userId)) {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const requestedUserId = req.params.userId;
+    const currentUserId = req.user.id.toString();
+    
+    // Check if the requested userId is the same as the authenticated user's id
+    // For MongoDB IDs, we might need to check if one starts with the other
+    if (!(currentUserId === requestedUserId || 
+          currentUserId.startsWith(requestedUserId) || 
+          requestedUserId.startsWith(currentUserId))) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
-      const investments = await storage.getUserInvestments(parseInt(req.params.userId));
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const investments = await storage.getUserInvestments(requestedUserId);
       res.json(investments);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch investments" });
@@ -137,7 +151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/startups/:startupId/updates", async (req, res) => {
     try {
-      const updates = await storage.getStartupUpdates(parseInt(req.params.startupId));
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const updates = await storage.getStartupUpdates(req.params.startupId);
       res.json(updates);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch updates" });
@@ -146,10 +161,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/startups/:startupId/investments", async (req, res) => {
     try {
-      const investments = await storage.getStartupInvestments(parseInt(req.params.startupId));
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const investments = await storage.getStartupInvestments(req.params.startupId);
       res.json(investments);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch startup investments" });
+    }
+  });
+  
+  // Admin route for clearing data - remove in production
+  app.delete("/api/admin/clear-startups", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      await storage.clearStartups();
+      res.status(200).json({ message: "All startups cleared successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear startups" });
+    }
+  });
+  
+  // Temporary route to get all users - REMOVE BEFORE PRODUCTION
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 

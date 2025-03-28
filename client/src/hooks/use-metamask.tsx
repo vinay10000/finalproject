@@ -2,6 +2,7 @@ import { createContext, ReactNode, useContext, useEffect, useState } from "react
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { createEnhancedMetaMaskError } from "@/lib/metamask-errors";
 
 interface MetaMaskContextType {
   address: string | null;
@@ -309,21 +310,12 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       
       return txHash;
     } catch (error: any) {
-      // Handle specific errors with better messages
-      if (error?.code === 4001) {
-        throw new Error("Transaction rejected by user. Please try again.");
-      } else if (error?.code === -32602 || (error?.message && error?.message.includes("params"))) {
-        console.error("Transaction parameter error:", error);
-        throw new Error("Invalid transaction parameters. Please try again with a different amount.");
-      } else if (error?.message?.includes("insufficient funds")) {
-        throw new Error("Insufficient funds in your wallet. Please add more ETH to continue.");
-      } else if (error?.message?.includes("buffer") || error?.message?.includes("out-of-bounds")) {
-        console.error("Buffer error detected:", error);
-        throw new Error("Transaction format error. Please try a smaller amount.");
-      }
-      
       console.error("Transaction failed:", error);
-      throw new Error(error?.message || "Transaction failed. Please check your MetaMask wallet and try again.");
+      
+      // Use our utility function to create a properly formatted error object
+      const enhancedError = createEnhancedMetaMaskError(error);
+      
+      throw enhancedError;
     }
   };
 

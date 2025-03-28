@@ -1,0 +1,44 @@
+# Git files
+.git
+.github
+.gitignore
+
+# Node.js files
+node_modules
+npm-debug.log
+
+# Build directories
+dist
+build
+client/dist
+
+# Docker files
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# Environment variables and local configuration
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Replit specific files
+.replit
+.replit.nix
+replit.nix
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Other
+.DS_Store
+coverage
+.nyc_output
+*.swp
+*.swo

@@ -146,11 +146,33 @@ export default function StartupDetailPage() {
       
     } catch (error: any) {
       console.error("Investment transaction failed:", error);
-      toast({
-        title: "Investment Failed",
-        description: error?.message || "There was an error processing your investment",
-        variant: "destructive"
-      });
+      
+      // Create a more user-friendly error message based on the type of error
+      let errorMessage = error?.message || "There was an error processing your investment";
+      let shouldShowInModal = true;
+      
+      // Format special error cases
+      if (error?.code === 4001) {
+        errorMessage = "Transaction rejected. Please try again and approve the transaction in MetaMask.";
+        shouldShowInModal = false; // Simple rejection doesn't need the detailed modal
+      } else if (error?.message?.includes("buffer") || error?.message?.includes("out-of-bounds")) {
+        errorMessage = "Transaction data error. Please try a smaller amount (0.01 ETH or less).";
+      } else if (error?.message?.includes("insufficient funds")) {
+        errorMessage = "You don't have enough ETH in your wallet. Please add funds and try again.";
+      }
+      
+      // For simple errors, just show a toast
+      if (!shouldShowInModal) {
+        toast({
+          title: "Investment Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
+      
+      // For complex errors, the modal will handle display via its error prop
+      // Let the error bubble up to the InvestmentModal component
+      throw error;
     }
   };
 

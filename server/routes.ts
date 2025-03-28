@@ -251,6 +251,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User Profile Management Routes
+  app.patch("/api/user/email", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+    
+    try {
+      const user = await storage.updateUserEmail(req.user.id, email);
+      // Don't send password in response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("already in use")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update email" });
+    }
+  });
+  
+  app.patch("/api/user/password", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+    
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters long" });
+    }
+    
+    try {
+      const user = await storage.updateUserPassword(req.user.id, password);
+      // Don't send password in response
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+  
+  app.delete("/api/user", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      await storage.deleteUser(req.user.id);
+      
+      // Log out the user
+      req.logout((err) => {
+        if (err) {
+          console.log("[server] Error logging out after account deletion:", err);
+          return res.status(500).json({ message: "Error logging out" });
+        }
+        res.status(200).json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   // Temporary route to get all users - REMOVE BEFORE PRODUCTION
   app.get("/api/admin/users", async (req, res) => {
     try {

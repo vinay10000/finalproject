@@ -30,11 +30,15 @@ export function Header() {
     ? user.username.slice(0, 2).toUpperCase()
     : "BF";
 
-  const navItems = [
+  interface NavItem {
+    name: string;
+    href: string;
+    icon?: React.ReactNode;
+  }
+  
+  const navItems: NavItem[] = [
     { name: "Dashboard", href: "/" },
-    { name: isInvestor ? "My Investments" : "Edit Profile", href: "#" },
-    { name: isInvestor ? "Watchlist" : "Post Updates", href: "#" },
-    { name: "Transactions", href: "/transactions", icon: <Activity className="mr-1 h-4 w-4" /> }
+    { name: isInvestor ? "My Investments" : "Edit Profile", href: isInvestor ? "/my-investments" : "#" },
   ];
 
   const handleLogout = () => {
@@ -118,7 +122,7 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
@@ -163,6 +167,22 @@ export function Header() {
                       </Link>
                     </div>
                   ))}
+                  <div>
+                    <Link href="/profile">
+                      <div
+                        className={`${
+                          location === "/profile"
+                            ? "bg-primary-50 border-primary text-primary"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        } block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center cursor-pointer`}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </div>
+                    </Link>
+                  </div>
+
                   <div>
                     <Link href="/wallet">
                       <div

@@ -17,6 +17,61 @@ export class MongoDBStorage implements IStorage {
       autoRemove: 'native'
     });
   }
+  
+  async updateUserEmail(userId: number | string, email: string): Promise<User> {
+    try {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        { email },
+        { new: true }
+      );
+      
+      if (!updatedUser) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      
+      return documentToUser(updatedUser);
+    } catch (error) {
+      log(`Error updating user email: ${error}`);
+      throw error;
+    }
+  }
+  
+  async updateUserPassword(userId: number | string, password: string): Promise<User> {
+    try {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        { password },
+        { new: true }
+      );
+      
+      if (!updatedUser) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      
+      return documentToUser(updatedUser);
+    } catch (error) {
+      log(`Error updating user password: ${error}`);
+      throw error;
+    }
+  }
+  
+  async deleteUser(userId: number | string): Promise<void> {
+    try {
+      const result = await UserModel.findByIdAndDelete(userId);
+      
+      if (!result) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      
+      // Could also delete related data like investments
+      // await InvestmentModel.deleteMany({ investorId: userId });
+      
+    } catch (error) {
+      log(`Error deleting user: ${error}`);
+      throw error;
+    }
+  }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {

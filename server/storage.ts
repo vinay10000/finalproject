@@ -14,6 +14,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserEmail(userId: number | string, email: string): Promise<User>;
+  updateUserPassword(userId: number | string, password: string): Promise<User>;
+  deleteUser(userId: number | string): Promise<void>;
   updateUserWalletAddress(userId: number | string, walletAddress: string): Promise<User>;
   confirmUserWalletAddress(userId: number | string, walletAddress: string): Promise<User>;
   getAllUsers(): Promise<User[]>;
@@ -188,6 +191,89 @@ export class MemStorage implements IStorage {
     
     this.users.set(numericId, updatedUser);
     return updatedUser;
+  }
+  
+  async updateUserEmail(userId: number | string, email: string): Promise<User> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    // Check if the user exists
+    const user = await this.getUser(numericId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Check if email is already in use by another user
+    const existingUserWithEmail = Array.from(this.users.values()).find(
+      u => u.email === email && u.id !== numericId
+    );
+    
+    if (existingUserWithEmail) {
+      throw new Error("Email is already in use by another account");
+    }
+    
+    // Update the user's email
+    const updatedUser: User = {
+      ...user,
+      email
+    };
+    
+    this.users.set(numericId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserPassword(userId: number | string, password: string): Promise<User> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    // Check if the user exists
+    const user = await this.getUser(numericId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // In a real application, we would hash the password here
+    // For this example, we'll just store it directly (not recommended for production)
+    const updatedUser: User = {
+      ...user,
+      password
+    };
+    
+    this.users.set(numericId, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteUser(userId: number | string): Promise<void> {
+    // Convert string id to number if needed for MemStorage
+    const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    // Check if the user exists
+    const user = await this.getUser(numericId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Delete the user
+    this.users.delete(numericId);
+    
+    // Cleanup related data (investments, startup, etc.)
+    // Find and delete user's startup if exists
+    const startup = await this.getStartupByUserId(numericId);
+    if (startup) {
+      this.startups.delete(startup.id);
+      
+      // Delete startup's updates
+      const updates = await this.getStartupUpdates(startup.id);
+      updates.forEach(update => this.updates.delete(update.id));
+      
+      // Delete startup's milestones
+      const milestones = await this.getStartupMilestones(startup.id);
+      milestones.forEach(milestone => this.milestones.delete(milestone.id));
+    }
+    
+    // Delete user's investments
+    const investments = await this.getUserInvestments(numericId);
+    investments.forEach(investment => this.investments.delete(investment.id));
   }
   
   async getAllUsers(): Promise<User[]> {

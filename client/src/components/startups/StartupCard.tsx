@@ -80,10 +80,8 @@ export function StartupCard({
       </CardContent>
       
       <CardFooter className="border-t border-gray-200 px-4 py-4">
-        <Link href={`/startup/${id}`}>
-          <a className="text-sm font-medium text-primary hover:text-primary/80">
-            View details<span aria-hidden="true"> &rarr;</span>
-          </a>
+        <Link href={`/startup/${id}`} className="text-sm font-medium text-primary hover:text-primary/80">
+          View details<span aria-hidden="true"> &rarr;</span>
         </Link>
       </CardFooter>
     </Card>

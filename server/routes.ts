@@ -28,6 +28,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch startup details" });
     }
   });
+  
+  app.get("/api/users/:userId/startup", async (req, res) => {
+    try {
+      const startup = await storage.getStartupByUserId(parseInt(req.params.userId));
+      if (!startup) {
+        return res.status(404).json({ message: "Startup not found for this user" });
+      }
+      res.json(startup);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch startup details" });
+    }
+  });
 
   app.post("/api/startups", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -129,6 +141,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updates);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch updates" });
+    }
+  });
+  
+  app.get("/api/startups/:startupId/investments", async (req, res) => {
+    try {
+      const investments = await storage.getStartupInvestments(parseInt(req.params.startupId));
+      res.json(investments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch startup investments" });
     }
   });
 

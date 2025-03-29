@@ -186,9 +186,14 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Validate to address
-      if (!to || typeof to !== 'string' || !to.startsWith('0x')) {
-        throw new Error("Invalid recipient address. Ethereum addresses must start with 0x.");
+      // Validate to address - must be a proper Ethereum address for the startup
+      if (!to || typeof to !== 'string' || !to.startsWith('0x') || to.length !== 42) {
+        throw new Error("Invalid recipient address. Ethereum addresses must start with 0x and be 42 characters long.");
+      }
+
+      // Ensure we're not sending to our own address (common mistake)
+      if (to.toLowerCase() === address.toLowerCase()) {
+        throw new Error("Cannot send funds to your own wallet address. Investment must go to the startup's wallet.");
       }
 
       // Validate amount
@@ -239,10 +244,10 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       
       const amountHex = convertToWei(amount);
       
-      // Show pre-transaction notification
+      // Show pre-transaction notification with destination details
       toast({
         title: "Opening MetaMask",
-        description: "Please confirm the transaction in your MetaMask wallet.",
+        description: `Please confirm sending ${amount} ETH to startup wallet ${to.slice(0, 6)}...${to.slice(-4)}`,
       });
       
       // Send transaction with minimal parameters
@@ -262,10 +267,10 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       
       console.log("Transaction submitted:", txHash);
       
-      // Show success notification
+      // Show success notification with transaction details
       toast({
-        title: "Transaction Submitted",
-        description: "Your transaction has been submitted to the blockchain.",
+        title: "Investment Submitted",
+        description: `Your investment of ${amount} ETH to the startup has been submitted to the blockchain.`,
       });
       
       // Listen for transaction receipt to get confirmation
@@ -287,8 +292,8 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
             const status = receipt.status;
             if (status === '0x1') {
               toast({
-                title: "Transaction Confirmed",
-                description: "Your transaction has been confirmed on the blockchain.",
+                title: "Investment Confirmed",
+                description: `Your investment of ${amount} ETH to the startup has been confirmed on the blockchain.`,
               });
             } else {
               toast({

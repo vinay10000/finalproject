@@ -118,8 +118,10 @@ export default function StartupDetailPage() {
   
   // Helper function to get user wallet address for startup
   const getUserWalletAddress = (userId: number): string | undefined => {
-    // Use the actual wallet address from the database if it exists
-    if (startupUser?.walletAddress && startupUser.walletAddress.startsWith('0x')) {
+    // Use the actual wallet address from the database if it exists and has been confirmed
+    if (startupUser?.walletAddress && 
+        startupUser.walletAddress.startsWith('0x') && 
+        startupUser.walletConfirmed) {
       return startupUser.walletAddress;
     }
     return undefined; // Return undefined if no valid wallet address is found
@@ -133,17 +135,31 @@ export default function StartupDetailPage() {
         await connect();
       }
       
-      // Use a validated wallet address to avoid buffer overrun issues
-      // We'll ensure the address is a valid Ethereum address with proper checksum
-      const walletAddress: string = 
-        startup.walletAddress && 
-        startup.walletAddress.startsWith('0x') && 
-        startup.walletAddress.length === 42 
-          ? startup.walletAddress 
-          : '0x0000000000000000000000000000000000000000'; // fallback to zero address
+      // Ensure we're using the startup owner's wallet address (not investor's)
+      // Make sure the wallet is confirmed (verified) in the database
+      if (!startup.walletAddress) {
+        toast({
+          title: "Investment Failed",
+          description: "This startup hasn't added a valid wallet address yet.",
+          variant: "destructive"
+        });
+        throw new Error("Startup wallet address not found");
+      }
+      
+      // Validate the wallet address format
+      const walletAddress: string = startup.walletAddress;
+      
+      if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
+        toast({
+          title: "Investment Failed",
+          description: "The startup's wallet address is invalid.",
+          variant: "destructive"
+        });
+        throw new Error("Invalid startup wallet address format");
+      }
       
       // Log transaction details for debugging
-      console.log(`Sending transaction to ${walletAddress} for ${amount} ETH`);
+      console.log(`Sending investment to startup wallet: ${walletAddress} for ${amount} ETH`);
       
       // Send the transaction through MetaMask with simplified parameters
       const txHash = await sendTransaction(

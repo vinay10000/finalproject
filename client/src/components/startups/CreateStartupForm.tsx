@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ const formSchema = insertStartupSchema.omit({ userId: true }).extend({
   fundingGoal: z.coerce.number().min(1, "Funding goal must be at least 1"),
   photoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
   videoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
+  upiId: z.string().optional(),
+  upiQrUrl: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
 });
 
 type CreateStartupFormData = z.infer<typeof formSchema>;
@@ -52,6 +55,7 @@ type CreateStartupComponentProps = {
 
 export function CreateStartupComponent({ userId }: CreateStartupComponentProps) {
   const { toast } = useToast();
+  const [_, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateStartupFormData>({
@@ -67,6 +71,8 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
       pitchDeckUrl: "",
       photoUrl: "",
       videoUrl: "",
+      upiId: "",
+      upiQrUrl: ""
     },
   });
 
@@ -84,6 +90,11 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
       queryClient.invalidateQueries({ queryKey: ["/api/startups"] });
       setIsSubmitting(false);
       form.reset();
+      
+      // Navigate to home page after successful creation
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
     },
     onError: (error: any) => {
       toast({
@@ -305,6 +316,40 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
                 </FormItem>
               )}
             />
+
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <h3 className="text-base font-semibold mb-4">UPI Payment Details (For Indian Investors)</h3>
+              
+              <FormField
+                control={form.control}
+                name="upiId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>UPI ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="yourname@bankname" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                    </FormControl>
+                    <FormDescription>Your UPI ID that investors can use to send payments.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="upiQrUrl"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>UPI QR Code URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/upi-qr-code.png" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                    </FormControl>
+                    <FormDescription>A URL to your UPI QR code image for scanning.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating..." : "Create Startup Profile"}

@@ -35,6 +35,8 @@ const startupSchema = new Schema({
   pitchDeckUrl: { type: String },
   photoUrl: { type: String },
   videoUrl: { type: String },
+  upiId: { type: String },
+  upiQrUrl: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

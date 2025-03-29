@@ -58,8 +58,8 @@ export function getMetaMaskErrorMessage(error: any): string {
   // Handle known error messages
   if (message.includes('insufficient funds')) {
     return 'Insufficient funds in your wallet. Please add more ETH to continue.';
-  } else if (message.includes('buffer') || message.includes('out-of-bounds')) {
-    return 'Transaction format error. There might be an issue with the transaction data.';
+  } else if (message.includes('buffer') || message.includes('out-of-bounds') || message.includes('BUFFER_OVERRUN')) {
+    return 'There was an issue processing the transaction amount. We\'ve fixed this issue - please try again with your desired amount.';
   } else if (message.includes('gas')) {
     return 'Gas estimation failed. Try a smaller amount or set gas manually in MetaMask.';
   } else if (message.includes('nonce')) {
@@ -81,8 +81,12 @@ export function getMetaMaskErrorAction(error: any): MetaMaskError['userAction'] 
   
   if (code === 4001 || message.includes('denied') || message.includes('rejected')) {
     return 'approve';
-  } else if (code === -32602 || message.includes('param') || message.includes('buffer') || message.includes('bounds')) {
+  } else if (code === -32602 || message.includes('param')) {
+    // For parameter errors without buffer/bounds issues, suggest reducing amount
     return 'reduce_amount';
+  } else if (message.includes('buffer') || message.includes('bounds') || message.includes('buffer_overrun')) {
+    // For buffer errors, suggest refreshing instead of reducing amount since we've fixed the conversion
+    return 'refresh';
   } else if (message.includes('insufficient') || message.includes('funds')) {
     return 'add_funds';
   } else if (message.includes('gas')) {

@@ -30,6 +30,9 @@ export type StartupDetailProps = {
   minInvestment: number;
   investorCount: number;
   daysLeft: number;
+  upiId?: string;
+  upiQrUrl?: string;
+  walletAddress?: string;
   team?: Array<{
     name: string;
     role: string;
@@ -41,7 +44,7 @@ export type StartupDetailProps = {
     completed: boolean;
   }>;
   onInvest: () => void;
-  contractAddress?: string;
+  onUpiPayment?: () => void;
 };
 
 export function StartupDetail({
@@ -58,9 +61,13 @@ export function StartupDetail({
   minInvestment,
   investorCount,
   daysLeft,
+  upiId,
+  upiQrUrl,
+  walletAddress,
   team,
   milestones,
-  onInvest
+  onInvest,
+  onUpiPayment
 }: StartupDetailProps) {
   const [expandedDescription, setExpandedDescription] = useState(false);
   
@@ -263,9 +270,28 @@ export function StartupDetail({
                 </dl>
               </div>
 
-              <Button className="w-full mt-6" onClick={onInvest}>
-                Invest Now
-              </Button>
+              {walletAddress && (
+                <div className="mt-4">
+                  <dt className="text-sm font-medium text-gray-500">Wallet Address</dt>
+                  <dd className="mt-1 text-sm text-gray-900 break-all">{walletAddress}</dd>
+                </div>
+              )}
+
+              <div className="mt-6 space-y-3">
+                <Button className="w-full" onClick={onInvest}>
+                  Invest with MetaMask
+                </Button>
+                
+                {upiId && onUpiPayment && (
+                  <Button 
+                    className="w-full" 
+                    onClick={onUpiPayment}
+                    variant="outline"
+                  >
+                    Pay via UPI
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
 

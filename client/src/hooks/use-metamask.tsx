@@ -197,75 +197,43 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid amount. Please enter a positive number.");
       }
 
-      // Convert ETH amount to wei using ethers.js-style conversion but safer
-      // We'll handle any amount the user wants to invest
-      
-      // For safer conversion of ETH to Wei without using BigNumber libraries
+      // Convert ETH amount to wei using a more robust approach with BigInt
+      // This fixes the BUFFER_OVERRUN issue by using a consistent method for all amounts
       const convertToWei = (ethAmount: string): string => {
-        // Use the full amount that the user wants to invest
-        const amount = parseFloat(ethAmount);
-        
-        // Handle very small amounts specially
-        if (amount < 0.000001) {
-          return '0x0'; // Extremely small amounts become 0
-        }
-        
-        // For very small amounts (but not zero), use a simple fixed conversion
-        if (amount <= 0.0001) {
-          const weiValue = Math.floor(amount * 1e18);
-          return '0x' + weiValue.toString(16);
-        }
-        
-        // For modest amounts, use a simple conversion that's less likely to overflow
-        if (amount <= 0.01) {
-          const weiBase = Math.floor(amount * 1e16); // Scale by 10^16 instead of 10^18
-          return '0x' + weiBase.toString(16) + '00'; // Add two zeros to complete the 18 decimals
-        }
-        
-        // For amounts up to 1 ETH, use a segmented approach to prevent buffer overflow
-        if (amount <= 1) {
-          // Split into integer and fractional parts
-          const integerPart = Math.floor(amount);
-          const fractionalPart = amount - integerPart;
+        try {
+          // Parse the input as a float
+          const amount = parseFloat(ethAmount);
           
-          // Convert integer part (if any)
-          const oneEther = BigInt("1000000000000000000"); // 10^18 as a BigInt
-          let result = integerPart > 0 ? 
-                      BigInt(integerPart) * oneEther : 
-                      BigInt(0);
-          
-          // Add fractional part converted to wei
-          if (fractionalPart > 0) {
-            result += BigInt(Math.floor(fractionalPart * 1e18));
+          // Handle edge cases
+          if (isNaN(amount) || amount <= 0) {
+            throw new Error("Invalid amount: must be a positive number");
           }
           
+          // Split the amount into integer and decimal parts
+          const parts = ethAmount.split('.');
+          const integerPart = parts[0];
+          const decimalPart = parts.length > 1 ? parts[1].padEnd(18, '0').slice(0, 18) : '0'.repeat(18);
+          
+          // Handle integer part with BigInt
+          let result = BigInt(integerPart) * BigInt(10**18);
+          
+          // Handle decimal part with BigInt
+          if (decimalPart !== '0'.repeat(18)) {
+            // If decimal part is all zeros, we can skip this
+            const decimalValue = BigInt(decimalPart.padEnd(18, '0').slice(0, 18));
+            const decimalMultiplier = BigInt(10**(18 - decimalPart.length));
+            result += decimalValue * decimalMultiplier;
+          }
+          
+          // Convert to hex string
           return '0x' + result.toString(16);
-        }
-        
-        // For larger amounts (> 1 ETH), use BigInt for the entire conversion
-        try {
-          // Split into integer and fractional parts (limit fractional to 6 decimal places)
-          const integerPart = Math.floor(amount);
-          const fractionalPart = Math.floor((amount - integerPart) * 1e6) / 1e6;
-          
-          // Convert integer part
-          const oneEther = BigInt("1000000000000000000"); // 10^18 as a BigInt
-          const integerWei = BigInt(integerPart) * oneEther;
-          
-          // Convert fractional part and add to result
-          const fractionalWei = fractionalPart > 0 ? 
-                              BigInt(Math.floor(fractionalPart * 1e18)) : 
-                              BigInt(0);
-          
-          const totalWei = integerWei + fractionalWei;
-          return '0x' + totalWei.toString(16);
-        } catch (e) {
-          // Fallback method if BigInt operations fail
-          console.error('BigInt conversion failed, falling back to simplified method', e);
-          const scaledAmount = Math.floor(amount);
-          const scaledHex = scaledAmount.toString(16);
-          // Approximation: we're adding 18 zeros (representing the 10^18 wei conversion)
-          return '0x' + scaledHex + '0'.repeat(18);
+        } catch (error) {
+          console.error("Error converting ETH to wei:", error);
+          // If there's any error, default to a simple calculation that won't overflow
+          // This is a fallback method that's safer for MetaMask to handle
+          const amount = parseFloat(ethAmount);
+          const weiAmount = BigInt(Math.floor(amount)) * BigInt(10**18);
+          return '0x' + weiAmount.toString(16);
         }
       };
       

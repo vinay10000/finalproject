@@ -311,7 +311,9 @@ export class MemStorage implements IStorage {
       logoUrl: insertStartup.logoUrl || null,
       pitchDeckUrl: insertStartup.pitchDeckUrl || null,
       photoUrl: insertStartup.photoUrl || null,
-      videoUrl: insertStartup.videoUrl || null
+      videoUrl: insertStartup.videoUrl || null,
+      upiId: insertStartup.upiId || null,
+      upiQrUrl: insertStartup.upiQrUrl || null
     };
     this.startups.set(id, startup);
     return startup;
@@ -455,17 +457,58 @@ export class MemStorage implements IStorage {
 
 // Import our MongoDB storage implementation
 import { MongoDBStorage } from './db/mongodb-storage';
+import { connectToMongoDB } from './db/mongodb';
 
-// Determine which storage implementation to use
-let storageImplementation: IStorage;
+// Initialize with null, will be set during initialization
+let storageImplementation: IStorage | null = null;
 
-// Check if we have a MongoDB URI configuration and prioritize it
-if (process.env.MONGODB_URI) {
-  log('Using MongoDB storage implementation', 'storage');
-  storageImplementation = new MongoDBStorage();
-} else {
-  log('Using in-memory storage implementation', 'storage');
-  storageImplementation = new MemStorage();
+// Function to initialize storage - either MongoDB or in-memory
+export async function initializeStorage(): Promise<void> {
+  try {
+    if (process.env.MONGODB_URI) {
+      log('Attempting to initialize MongoDB storage', 'storage');
+      
+      try {
+        // First test the MongoDB connection
+        await connectToMongoDB();
+        
+        // Connection successful, use MongoDB storage
+        log('Using MongoDB storage implementation', 'storage');
+        storageImplementation = new MongoDBStorage();
+      } catch (error) {
+        // MongoDB connection failed, fallback to in-memory
+        log(`MongoDB initialization failed: ${error instanceof Error ? error.message : String(error)}`, 'storage');
+        log('Falling back to in-memory storage implementation', 'storage');
+        storageImplementation = new MemStorage();
+      }
+    } else {
+      // No MongoDB URI provided, use in-memory storage
+      log('No MongoDB URI provided, using in-memory storage implementation', 'storage');
+      storageImplementation = new MemStorage();
+    }
+  } catch (error) {
+    // If anything goes wrong, use in-memory as a last resort
+    log(`Storage initialization error: ${error instanceof Error ? error.message : String(error)}`, 'storage');
+    log('Using in-memory storage as fallback due to error', 'storage');
+    storageImplementation = new MemStorage();
+  }
+  
+  // Ensure we have a storage implementation
+  if (!storageImplementation) {
+    log('Storage initialization failed, using in-memory storage as last resort', 'storage');
+    storageImplementation = new MemStorage();
+  }
 }
 
-export const storage = storageImplementation;
+// Exported storage object - will be initialized before use
+export const storage = new Proxy({} as IStorage, {
+  get(target, prop) {
+    // Ensure we have storage implementation before accessing properties
+    if (!storageImplementation) {
+      throw new Error('Storage not initialized. Call initializeStorage() first.');
+    }
+    
+    // Forward property access to the actual implementation
+    return (storageImplementation as any)[prop];
+  }
+});

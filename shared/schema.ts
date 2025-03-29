@@ -29,6 +29,8 @@ export const startups = pgTable("startups", {
   pitchDeckUrl: text("pitch_deck_url"),
   photoUrl: text("photo_url"),
   videoUrl: text("video_url"),
+  upiId: text("upi_id"),
+  upiQrUrl: text("upi_qr_url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -91,6 +93,8 @@ export const insertStartupSchema = createInsertSchema(startups).pick({
   pitchDeckUrl: true,
   photoUrl: true,
   videoUrl: true,
+  upiId: true,
+  upiQrUrl: true,
 });
 
 // Schema for inserting investments

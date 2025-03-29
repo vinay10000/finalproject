@@ -328,6 +328,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route to get a specific user by ID
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      // Pass ID directly, let the storage implementation handle conversion if needed
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't expose password in the response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+  
   // Temporary route to get all users - REMOVE BEFORE PRODUCTION
   app.get("/api/admin/users", async (req, res) => {
     try {

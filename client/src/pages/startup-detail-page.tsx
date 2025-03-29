@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { StartupDetail, type StartupDetailProps } from "@/components/startups/StartupDetail";
 import { InvestmentModal } from "@/components/startups/InvestmentModal";
+import { UpiPaymentModal } from "@/components/startups/UpiPaymentModal";
 import { TransactionSuccessModal } from "@/components/startups/TransactionSuccessModal";
 import { Button } from "@/components/ui/button";
 import { MetaMaskProvider } from "@/hooks/use-metamask";
@@ -10,7 +11,8 @@ import { useMetaMask } from "@/hooks/use-metamask";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Startup, Investment } from "@shared/schema";
+import { Startup, Investment, User } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 
 // Initial default values to avoid errors before data is loaded
 const DEFAULT_STARTUP: StartupDetailProps = {
@@ -28,17 +30,22 @@ const DEFAULT_STARTUP: StartupDetailProps = {
   team: [],
   milestones: [],
   onInvest: () => {},
-  contractAddress: "0x0000000000000000000000000000000000000000",
+  walletAddress: "0x0000000000000000000000000000000000000000",
   photoUrl: undefined,
-  videoUrl: undefined
+  videoUrl: undefined,
+  upiId: undefined,
+  upiQrUrl: undefined,
+  onUpiPayment: () => {}
 };
 
 export default function StartupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [_, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { isConnected, connect, sendTransaction } = useMetaMask();
   const [isInvestModalOpen, setIsInvestModalOpen] = useState(false);
+  const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState({
     amount: 0,
@@ -47,9 +54,13 @@ export default function StartupDetailPage() {
     confirmations: 0
   });
 
-  // Define the invest callback
+  // Define handlers for investments
   const handleInvest = () => {
     setIsInvestModalOpen(true);
+  };
+  
+  const handleUpiPayment = () => {
+    setIsUpiModalOpen(true);
   };
 
   // Fetch the startup data from the API
@@ -82,11 +93,29 @@ export default function StartupDetailPage() {
       logoUrl: apiStartup.logoUrl || undefined,
       photoUrl: apiStartup.photoUrl || undefined,
       videoUrl: apiStartup.videoUrl || undefined,
+      walletAddress: apiStartup.userId ? getUserWalletAddress(apiStartup.userId) : undefined,
+      upiId: apiStartup.upiId || undefined,
+      upiQrUrl: apiStartup.upiQrUrl || undefined,
       team: [], // No team data in the API yet
       milestones: [], // No milestone data in the API yet
       onInvest: handleInvest,
-      contractAddress: "0x1234567890abcdef1234567890abcdef12345678" // Placeholder contract address
+      onUpiPayment: handleUpiPayment
     };
+  };
+  
+  // Get the wallet address from the startup's user account
+  const { data: startupUser } = useQuery<User>({
+    queryKey: [`/api/users/${apiStartup?.userId}`],
+    enabled: !!apiStartup?.userId
+  });
+  
+  // Helper function to get user wallet address for startup
+  const getUserWalletAddress = (userId: number): string | undefined => {
+    // Use the actual wallet address from the database if it exists
+    if (startupUser?.walletAddress && startupUser.walletAddress.startsWith('0x')) {
+      return startupUser.walletAddress;
+    }
+    return undefined; // Return undefined if no valid wallet address is found
   };
   
   const startup = getStartupData();
@@ -97,21 +126,21 @@ export default function StartupDetailPage() {
         await connect();
       }
       
-      // Use a validated contract address to avoid buffer overrun issues
+      // Use a validated wallet address to avoid buffer overrun issues
       // We'll ensure the address is a valid Ethereum address with proper checksum
-      const contractAddress: string = 
-        startup.contractAddress && 
-        startup.contractAddress.startsWith('0x') && 
-        startup.contractAddress.length === 42 
-          ? startup.contractAddress 
+      const walletAddress: string = 
+        startup.walletAddress && 
+        startup.walletAddress.startsWith('0x') && 
+        startup.walletAddress.length === 42 
+          ? startup.walletAddress 
           : '0x0000000000000000000000000000000000000000'; // fallback to zero address
       
       // Log transaction details for debugging
-      console.log(`Sending transaction to ${contractAddress} for ${amount} ETH`);
+      console.log(`Sending transaction to ${walletAddress} for ${amount} ETH`);
       
       // Send the transaction through MetaMask with simplified parameters
       const txHash = await sendTransaction(
-        contractAddress, 
+        walletAddress, 
         amount.toString()
       );
       
@@ -204,6 +233,7 @@ export default function StartupDetailPage() {
                 {...startup}
                 investorCount={investments?.length || 0}
                 onInvest={handleInvest}
+                onUpiPayment={handleUpiPayment}
               />
             )}
           </div>
@@ -226,6 +256,18 @@ export default function StartupDetailPage() {
           blockNumber={transactionDetails.blockNumber}
           confirmations={transactionDetails.confirmations}
         />
+        
+        {user && (
+          <UpiPaymentModal
+            open={isUpiModalOpen}
+            onOpenChange={setIsUpiModalOpen}
+            investorId={user.id}
+            startupId={Number(id)}
+            startupName={startup.name}
+            upiId={startup.upiId}
+            upiQrUrl={startup.upiQrUrl}
+          />
+        )}
       </div>
     </MetaMaskProvider>
   );

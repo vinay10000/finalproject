@@ -25,12 +25,14 @@ export const startups = pgTable("startups", {
   location: text("location"),
   fundingGoal: doublePrecision("funding_goal").notNull(),
   currentFunding: doublePrecision("current_funding").default(0),
-  logoUrl: text("logo_url"),
-  pitchDeckUrl: text("pitch_deck_url"),
-  photoUrl: text("photo_url"),
-  videoUrl: text("video_url"),
+  logo: text("logo").notNull(), // Base64 encoded logo image
+  photo: text("photo"), // Base64 encoded company photo
+  video: text("video"), // Base64 encoded video or URL to video
   upiId: text("upi_id"),
-  upiQrUrl: text("upi_qr_url"),
+  upiQr: text("upi_qr"), // Base64 encoded UPI QR code
+  pitchDeck: text("pitch_deck"), // Base64 encoded PDF
+  investmentTerms: text("investment_terms"), // Base64 encoded PDF
+  technicalWhitepaper: text("technical_whitepaper"), // Base64 encoded PDF
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -89,12 +91,25 @@ export const insertStartupSchema = createInsertSchema(startups).pick({
   fundingStage: true,
   location: true,
   fundingGoal: true,
-  logoUrl: true,
-  pitchDeckUrl: true,
-  photoUrl: true,
-  videoUrl: true,
+  logo: true,
+  photo: true,
+  video: true,
   upiId: true,
-  upiQrUrl: true,
+  upiQr: true,
+  pitchDeck: true,
+  investmentTerms: true,
+  technicalWhitepaper: true,
+}).extend({
+  // Base64 encoded files can be very large, so we don't want to add max length validations
+  // We only need to ensure the logo is required, as it's essential for displaying the startup
+  logo: z.string().min(1, "Logo is required"),
+  // Other fields are optional with empty string fallbacks
+  photo: z.string().optional(),
+  video: z.string().optional(),
+  upiQr: z.string().optional(),
+  pitchDeck: z.string().optional(),
+  investmentTerms: z.string().optional(),
+  technicalWhitepaper: z.string().optional(),
 });
 
 // Schema for inserting investments

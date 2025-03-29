@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertStartupSchema } from "@shared/schema";
+import { FileUpload } from "@/components/ui/file-upload";
 
 // Categories for startups
 const CATEGORIES = [
@@ -41,10 +42,7 @@ const formSchema = insertStartupSchema.omit({ userId: true }).extend({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(30, "Description must be at least 30 characters"),
   fundingGoal: z.coerce.number().min(1, "Funding goal must be at least 1"),
-  photoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
-  videoUrl: z.string().url("Must be a valid URL").or(z.literal("")),
   upiId: z.string().optional(),
-  upiQrUrl: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
 });
 
 type CreateStartupFormData = z.infer<typeof formSchema>;
@@ -67,12 +65,14 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
       fundingStage: "Seed",
       location: "",
       fundingGoal: 100,
-      logoUrl: "",
-      pitchDeckUrl: "",
-      photoUrl: "",
-      videoUrl: "",
+      logo: "",
+      photo: "",
+      video: "",
+      pitchDeck: "",
+      investmentTerms: "",
+      technicalWhitepaper: "",
       upiId: "",
-      upiQrUrl: ""
+      upiQr: ""
     },
   });
 
@@ -259,14 +259,23 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
 
             <FormField
               control={form.control}
-              name="logoUrl"
+              name="logo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo URL (Optional)</FormLabel>
+                  <FormLabel>Company Logo</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/logo.png" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                    <FileUpload
+                      type="image"
+                      label="Logo Image"
+                      accept="image/*"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onClear={() => field.onChange("")}
+                      required={true}
+                      placeholder="Drag & drop your company logo or click to browse"
+                    />
                   </FormControl>
-                  <FormDescription>A URL pointing to your startup's logo.</FormDescription>
+                  <FormDescription>Your company logo (required). This will be displayed prominently on your profile.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -274,14 +283,23 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
 
             <FormField
               control={form.control}
-              name="pitchDeckUrl"
+              name="photo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pitch Deck URL (Optional)</FormLabel>
+                  <FormLabel>Company Photo</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/pitch-deck.pdf" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                    <FileUpload
+                      type="image"
+                      label="Company Photo"
+                      accept="image/*"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onClear={() => field.onChange("")}
+                      required={false}
+                      placeholder="Drag & drop your company photo or click to browse"
+                    />
                   </FormControl>
-                  <FormDescription>A URL to your startup's pitch deck or presentation.</FormDescription>
+                  <FormDescription>A featured photo for your startup.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -289,33 +307,103 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
 
             <FormField
               control={form.control}
-              name="photoUrl"
+              name="video"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Photo URL</FormLabel>
+                  <FormLabel>Promotional Video (Max 50MB, Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/startup-photo.jpg" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                    <FileUpload
+                      type="video"
+                      label="Promotional Video"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onClear={() => field.onChange("")}
+                      required={false}
+                      placeholder="Drag & drop your video or click to browse"
+                    />
                   </FormControl>
-                  <FormDescription>A URL to a featured photo for your startup.</FormDescription>
+                  <FormDescription>A short promotional video to showcase your startup (maximum 50MB).</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="videoUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Video URL (Max 5MB, Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/startup-video.mp4" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
-                  </FormControl>
-                  <FormDescription>A URL to a promotional video (maximum 5MB).</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <h3 className="text-base font-semibold mb-4">Documents</h3>
+              
+              <FormField
+                control={form.control}
+                name="pitchDeck"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pitch Deck (PDF, Optional)</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        type="pdf"
+                        label="Pitch Deck"
+                        accept=".pdf"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onClear={() => field.onChange("")}
+                        required={false}
+                        placeholder="Drag & drop your pitch deck or click to browse"
+                      />
+                    </FormControl>
+                    <FormDescription>Your startup's pitch deck or presentation (PDF format).</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="investmentTerms"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>Investment Terms (PDF, Optional)</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        type="pdf"
+                        label="Investment Terms"
+                        accept=".pdf"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onClear={() => field.onChange("")}
+                        required={false}
+                        placeholder="Drag & drop your investment terms document or click to browse"
+                      />
+                    </FormControl>
+                    <FormDescription>Document outlining investment terms and conditions (PDF format).</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="technicalWhitepaper"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>Technical Whitepaper (PDF, Optional)</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        type="pdf"
+                        label="Technical Whitepaper"
+                        accept=".pdf"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onClear={() => field.onChange("")}
+                        required={false}
+                        placeholder="Drag & drop your technical whitepaper or click to browse"
+                      />
+                    </FormControl>
+                    <FormDescription>Technical document describing your product or technology (PDF format).</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="border-t border-gray-200 pt-6 mt-6">
               <h3 className="text-base font-semibold mb-4">UPI Payment Details (For Indian Investors)</h3>
@@ -337,14 +425,23 @@ export function CreateStartupComponent({ userId }: CreateStartupComponentProps) 
 
               <FormField
                 control={form.control}
-                name="upiQrUrl"
+                name="upiQr"
                 render={({ field }) => (
                   <FormItem className="mt-4">
-                    <FormLabel>UPI QR Code URL</FormLabel>
+                    <FormLabel>UPI QR Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/upi-qr-code.png" value={field.value || ""} onChange={field.onChange} name={field.name} ref={field.ref} onBlur={field.onBlur} />
+                      <FileUpload
+                        type="image"
+                        label="UPI QR Code"
+                        accept="image/*"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onClear={() => field.onChange("")}
+                        required={false}
+                        placeholder="Drag & drop your UPI QR code image or click to browse"
+                      />
                     </FormControl>
-                    <FormDescription>A URL to your UPI QR code image for scanning.</FormDescription>
+                    <FormDescription>Your UPI QR code that investors can scan to make payments.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

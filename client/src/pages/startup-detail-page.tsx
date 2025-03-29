@@ -31,10 +31,14 @@ const DEFAULT_STARTUP: StartupDetailProps = {
   milestones: [],
   onInvest: () => {},
   walletAddress: "0x0000000000000000000000000000000000000000",
-  photoUrl: undefined,
-  videoUrl: undefined,
+  logo: undefined,
+  photo: undefined,
+  video: undefined,
+  pitchDeck: undefined,
+  investmentTerms: undefined,
+  technicalWhitepaper: undefined,
   upiId: undefined,
-  upiQrUrl: undefined,
+  upiQr: undefined,
   onUpiPayment: () => {}
 };
 
@@ -90,12 +94,15 @@ export default function StartupDetailPage() {
       investorCount: investments?.length || 0,
       daysLeft: 30, // Default value as it's not in the API
       location: apiStartup.location || undefined,
-      logoUrl: apiStartup.logoUrl || undefined,
-      photoUrl: apiStartup.photoUrl || undefined,
-      videoUrl: apiStartup.videoUrl || undefined,
+      logo: apiStartup.logo || undefined,
+      photo: apiStartup.photo || undefined,
+      video: apiStartup.video || undefined,
+      pitchDeck: apiStartup.pitchDeck || undefined,
+      investmentTerms: apiStartup.investmentTerms || undefined,
+      technicalWhitepaper: apiStartup.technicalWhitepaper || undefined,
       walletAddress: apiStartup.userId ? getUserWalletAddress(apiStartup.userId) : undefined,
       upiId: apiStartup.upiId || undefined,
-      upiQrUrl: apiStartup.upiQrUrl || undefined,
+      upiQr: apiStartup.upiQr || undefined,
       team: [], // No team data in the API yet
       milestones: [], // No milestone data in the API yet
       onInvest: handleInvest,
@@ -265,7 +272,7 @@ export default function StartupDetailPage() {
             startupId={Number(id)}
             startupName={startup.name}
             upiId={startup.upiId}
-            upiQrUrl={startup.upiQrUrl}
+            upiQr={startup.upiQr}
           />
         )}
       </div>

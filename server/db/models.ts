@@ -31,12 +31,14 @@ const startupSchema = new Schema({
   location: { type: String },
   fundingGoal: { type: Number, required: true },
   currentFunding: { type: Number, default: 0 },
-  logoUrl: { type: String },
-  pitchDeckUrl: { type: String },
-  photoUrl: { type: String },
-  videoUrl: { type: String },
+  logo: { type: String, required: true }, // Base64 encoded logo image
+  photo: { type: String }, // Base64 encoded company photo
+  video: { type: String }, // Base64 encoded video or URL to video
   upiId: { type: String },
-  upiQrUrl: { type: String },
+  upiQr: { type: String }, // Base64 encoded UPI QR code
+  pitchDeck: { type: String }, // Base64 encoded PDF
+  investmentTerms: { type: String }, // Base64 encoded PDF
+  technicalWhitepaper: { type: String }, // Base64 encoded PDF
   createdAt: { type: Date, default: Date.now }
 });
 

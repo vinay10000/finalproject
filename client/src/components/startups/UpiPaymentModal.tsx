@@ -23,7 +23,7 @@ export type UpiPaymentModalProps = {
   startupId: number;
   startupName: string;
   upiId?: string;
-  upiQrUrl?: string;
+  upiQr?: string;
 };
 
 export function UpiPaymentModal({
@@ -33,7 +33,7 @@ export function UpiPaymentModal({
   startupId,
   startupName,
   upiId,
-  upiQrUrl
+  upiQr
 }: UpiPaymentModalProps) {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
@@ -130,10 +130,10 @@ export function UpiPaymentModal({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          {upiQrUrl && (
+          {upiQr && (
             <div className="flex flex-col items-center justify-center mb-4">
               <img 
-                src={upiQrUrl} 
+                src={upiQr} 
                 alt="UPI QR Code" 
                 className="w-full max-w-[200px] h-auto mb-2"
               />

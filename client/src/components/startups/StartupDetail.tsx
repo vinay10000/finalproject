@@ -18,9 +18,12 @@ import { useState } from "react";
 export type StartupDetailProps = {
   id: number;
   name: string;
-  logoUrl?: string;
-  photoUrl?: string;
-  videoUrl?: string;
+  logo?: string;
+  photo?: string;
+  video?: string;
+  pitchDeck?: string;
+  investmentTerms?: string;
+  technicalWhitepaper?: string;
   category: string;
   fundingStage: string;
   location?: string;
@@ -31,7 +34,7 @@ export type StartupDetailProps = {
   investorCount: number;
   daysLeft: number;
   upiId?: string;
-  upiQrUrl?: string;
+  upiQr?: string;
   walletAddress?: string;
   team?: Array<{
     name: string;
@@ -49,9 +52,12 @@ export type StartupDetailProps = {
 
 export function StartupDetail({
   name,
-  logoUrl,
-  photoUrl,
-  videoUrl,
+  logo,
+  photo,
+  video,
+  pitchDeck,
+  investmentTerms,
+  technicalWhitepaper,
   category,
   fundingStage,
   location,
@@ -62,7 +68,7 @@ export function StartupDetail({
   investorCount,
   daysLeft,
   upiId,
-  upiQrUrl,
+  upiQr,
   walletAddress,
   team,
   milestones,
@@ -88,8 +94,8 @@ export function StartupDetail({
       <Card>
         <CardContent className="p-6 flex items-center">
           <Avatar className="h-16 w-16">
-            {logoUrl ? (
-              <img src={logoUrl} alt={name} className="h-full w-full object-cover" />
+            {logo ? (
+              <img src={logo} alt={name} className="h-full w-full object-cover" />
             ) : (
               <AvatarFallback>{getInitials(name)}</AvatarFallback>
             )}
@@ -120,10 +126,10 @@ export function StartupDetail({
           {/* Company Overview */}
           <Card>
             <CardContent className="p-6">
-              {photoUrl && (
+              {photo && (
                 <div className="mb-6">
                   <img 
-                    src={photoUrl} 
+                    src={photo} 
                     alt={`${name} featured image`} 
                     className="w-full h-64 object-cover rounded-md"
                   />
@@ -144,11 +150,11 @@ export function StartupDetail({
                 </Button>
               )}
               
-              {videoUrl && (
+              {video && (
                 <div className="mt-6">
                   <h3 className="text-md font-medium text-gray-900 mb-2">Promotional Video</h3>
                   <video 
-                    src={videoUrl} 
+                    src={video} 
                     controls
                     className="w-full rounded-md"
                     style={{ maxHeight: "360px" }}
@@ -302,34 +308,77 @@ export function StartupDetail({
             </CardHeader>
             <CardContent className="p-0">
               <ul className="divide-y divide-gray-200">
-                <li className="py-3 px-6">
-                  <a href="#" className="flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <FileText className="text-red-500 mr-3 h-4 w-4" />
-                    <span>Pitch Deck</span>
-                    <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
-                  </a>
-                </li>
-                <li className="py-3 px-6">
-                  <a href="#" className="flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <FileText className="text-blue-500 mr-3 h-4 w-4" />
-                    <span>Investment Terms</span>
-                    <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
-                  </a>
-                </li>
-                <li className="py-3 px-6">
-                  <a href="#" className="flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <FileText className="text-yellow-500 mr-3 h-4 w-4" />
-                    <span>Technical Whitepaper</span>
-                    <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
-                  </a>
-                </li>
-                <li className="py-3 px-6">
-                  <a href="#" className="flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <FileCode className="text-green-500 mr-3 h-4 w-4" />
-                    <span>Smart Contract Audit</span>
-                    <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
-                  </a>
-                </li>
+                {pitchDeck ? (
+                  <li className="py-3 px-6">
+                    <a 
+                      href={pitchDeck}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      download="pitch_deck.pdf"
+                      className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      <FileText className="text-red-500 mr-3 h-4 w-4" />
+                      <span>Pitch Deck</span>
+                      <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
+                    </a>
+                  </li>
+                ) : (
+                  <li className="py-3 px-6">
+                    <div className="flex items-center text-sm text-gray-400">
+                      <FileText className="text-gray-300 mr-3 h-4 w-4" />
+                      <span>Pitch Deck</span>
+                      <span className="ml-auto text-xs text-gray-400">Not available</span>
+                    </div>
+                  </li>
+                )}
+                
+                {investmentTerms ? (
+                  <li className="py-3 px-6">
+                    <a 
+                      href={investmentTerms}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      download="investment_terms.pdf"
+                      className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      <FileText className="text-blue-500 mr-3 h-4 w-4" />
+                      <span>Investment Terms</span>
+                      <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
+                    </a>
+                  </li>
+                ) : (
+                  <li className="py-3 px-6">
+                    <div className="flex items-center text-sm text-gray-400">
+                      <FileText className="text-gray-300 mr-3 h-4 w-4" />
+                      <span>Investment Terms</span>
+                      <span className="ml-auto text-xs text-gray-400">Not available</span>
+                    </div>
+                  </li>
+                )}
+                
+                {technicalWhitepaper ? (
+                  <li className="py-3 px-6">
+                    <a 
+                      href={technicalWhitepaper}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      download="technical_whitepaper.pdf"
+                      className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      <FileText className="text-yellow-500 mr-3 h-4 w-4" />
+                      <span>Technical Whitepaper</span>
+                      <DownloadIcon className="ml-auto text-gray-400 h-4 w-4" />
+                    </a>
+                  </li>
+                ) : (
+                  <li className="py-3 px-6">
+                    <div className="flex items-center text-sm text-gray-400">
+                      <FileText className="text-gray-300 mr-3 h-4 w-4" />
+                      <span>Technical Whitepaper</span>
+                      <span className="ml-auto text-xs text-gray-400">Not available</span>
+                    </div>
+                  </li>
+                )}
               </ul>
             </CardContent>
           </Card>

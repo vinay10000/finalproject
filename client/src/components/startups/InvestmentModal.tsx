@@ -119,15 +119,24 @@ export function InvestmentModal({
     } catch (error: any) {
       console.error("Investment failed:", error);
       
-      // Create a user-friendly error object incorporating MetaMask error properties
-      setTransactionError({
-        isVisible: true,
-        title: "Investment Failed",
-        message: error?.message || "Failed to process your investment transaction.",
-        code: error?.code,
-        details: error?.stack,
-        userAction: error?.userAction
-      });
+      // Check for specifically handled errors that don't need the error modal
+      if (error?.message === "Startup wallet address not found") {
+        // This error is already handled with a toast on the detail page
+        // No need to show the error modal
+      } else if (error?.message === "Invalid startup wallet address format") {
+        // This error is already handled with a toast on the detail page
+        // No need to show the error modal
+      } else {
+        // For MetaMask and other errors, show the error modal with details
+        setTransactionError({
+          isVisible: true,
+          title: "Investment Failed",
+          message: error?.message || "Failed to process your investment transaction.",
+          code: error?.code,
+          details: error?.stack,
+          userAction: error?.userAction
+        });
+      }
     } finally {
       setIsInvesting(false);
     }

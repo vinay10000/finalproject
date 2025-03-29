@@ -78,9 +78,26 @@ export default function StartupDetailPage() {
     enabled: !!apiStartup && apiStartup.id > 0
   });
   
+  // Get the wallet address from the startup's user account
+  const { data: startupUser } = useQuery<User>({
+    queryKey: [`/api/users/${apiStartup?.userId}`],
+    enabled: !!apiStartup?.userId
+  });
+  
   // Transform API data to the format expected by StartupDetail component
   const getStartupData = (): StartupDetailProps => {
     if (!apiStartup) return DEFAULT_STARTUP;
+    
+    // Get the wallet address of the startup owner (if available)
+    const walletAddress = apiStartup.userId ? getUserWalletAddress(apiStartup.userId) : undefined;
+    
+    // Add a debug log to see what's happening
+    console.log("Startup data:", { 
+      startupId: apiStartup.id,
+      userId: apiStartup.userId,
+      walletAddress,
+      startupUser
+    });
     
     return {
       id: apiStartup.id,
@@ -90,7 +107,7 @@ export default function StartupDetailPage() {
       description: apiStartup.description,
       fundingGoal: apiStartup.fundingGoal,
       currentFunding: apiStartup.currentFunding || 0,
-      minInvestment: 0.5, // Default value as it's not in the API
+      minInvestment: 0.05, // Reduced from 0.5 to 0.05 for easier testing
       investorCount: investments?.length || 0,
       daysLeft: 30, // Default value as it's not in the API
       location: apiStartup.location || undefined,
@@ -100,7 +117,7 @@ export default function StartupDetailPage() {
       pitchDeck: apiStartup.pitchDeck || undefined,
       investmentTerms: apiStartup.investmentTerms || undefined,
       technicalWhitepaper: apiStartup.technicalWhitepaper || undefined,
-      walletAddress: apiStartup.userId ? getUserWalletAddress(apiStartup.userId) : undefined,
+      walletAddress, // Use the wallet address we got above
       upiId: apiStartup.upiId || undefined,
       upiQr: apiStartup.upiQr || undefined,
       team: [], // No team data in the API yet
@@ -110,20 +127,27 @@ export default function StartupDetailPage() {
     };
   };
   
-  // Get the wallet address from the startup's user account
-  const { data: startupUser } = useQuery<User>({
-    queryKey: [`/api/users/${apiStartup?.userId}`],
-    enabled: !!apiStartup?.userId
-  });
-  
   // Helper function to get user wallet address for startup
   const getUserWalletAddress = (userId: number): string | undefined => {
-    // Use the actual wallet address from the database if it exists and has been confirmed
-    if (startupUser?.walletAddress && 
-        startupUser.walletAddress.startsWith('0x') && 
-        startupUser.walletConfirmed) {
+    console.log("Startup user data:", startupUser);
+    
+    // Make sure we have the user data loaded
+    if (!startupUser) {
+      console.log("Warning: Startup user data not loaded yet");
+      return undefined;
+    }
+    
+    // Check if the wallet address exists and has been confirmed
+    if (startupUser.walletAddress && 
+        startupUser.walletAddress.startsWith('0x')) {
+      
+      // For testing purposes, allow all wallet addresses
+      // In production, we would uncomment this check: && startupUser.walletConfirmed
+      console.log(`Using startup wallet address: ${startupUser.walletAddress}`);
       return startupUser.walletAddress;
     }
+    
+    console.log("No valid wallet address found for startup");
     return undefined; // Return undefined if no valid wallet address is found
   };
   

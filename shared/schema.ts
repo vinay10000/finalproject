@@ -33,6 +33,8 @@ export const startups = pgTable("startups", {
   pitchDeck: text("pitch_deck"), // Base64 encoded PDF
   investmentTerms: text("investment_terms"), // Base64 encoded PDF
   technicalWhitepaper: text("technical_whitepaper"), // Base64 encoded PDF
+  fundingEndDate: timestamp("funding_end_date"), // Allow startups to set their own end date
+  active: boolean("active").default(true), // Whether the startup is still accepting investments
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -99,6 +101,8 @@ export const insertStartupSchema = createInsertSchema(startups).pick({
   pitchDeck: true,
   investmentTerms: true,
   technicalWhitepaper: true,
+  fundingEndDate: true,
+  active: true,
 }).extend({
   // Base64 encoded files can be very large, so we don't want to add max length validations
   // We only need to ensure the logo is required, as it's essential for displaying the startup
@@ -110,6 +114,8 @@ export const insertStartupSchema = createInsertSchema(startups).pick({
   pitchDeck: z.string().optional(),
   investmentTerms: z.string().optional(),
   technicalWhitepaper: z.string().optional(),
+  fundingEndDate: z.date().optional(),
+  active: z.boolean().default(true),
 });
 
 // Schema for inserting investments

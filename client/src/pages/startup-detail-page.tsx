@@ -11,7 +11,7 @@ import { useMetaMask } from "@/hooks/use-metamask";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Startup, Investment, User } from "@shared/schema";
+import { Startup, Investment, User, Update } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
 // Initial default values to avoid errors before data is loaded
@@ -29,6 +29,7 @@ const DEFAULT_STARTUP: StartupDetailProps = {
   daysLeft: 0,
   team: [],
   milestones: [],
+  updates: [],
   onInvest: () => {},
   walletAddress: "0x0000000000000000000000000000000000000000",
   logo: undefined,
@@ -78,6 +79,12 @@ export default function StartupDetailPage() {
     enabled: !!apiStartup && apiStartup.id > 0
   });
   
+  // Fetch updates for this startup
+  const { data: updates = [] } = useQuery<Update[], Error>({
+    queryKey: [`/api/startups/${id}/updates`],
+    enabled: !!apiStartup && apiStartup.id > 0
+  });
+  
   // Get the wallet address from the startup's user account
   const { data: startupUser } = useQuery<User>({
     queryKey: [`/api/users/${apiStartup?.userId}`],
@@ -122,6 +129,24 @@ export default function StartupDetailPage() {
       upiQr: apiStartup.upiQr || undefined,
       team: [], // No team data in the API yet
       milestones: [], // No milestone data in the API yet
+      updates: updates.map(update => {
+        const date = typeof update.createdAt === 'string' 
+          ? new Date(update.createdAt)
+          : update.createdAt instanceof Date 
+            ? update.createdAt 
+            : new Date();
+            
+        return {
+          id: update.id,
+          title: update.title,
+          content: update.content,
+          date: date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          })
+        };
+      }),
       onInvest: handleInvest,
       onUpiPayment: handleUpiPayment
     };
@@ -141,10 +166,14 @@ export default function StartupDetailPage() {
     if (startupUser.walletAddress && 
         startupUser.walletAddress.startsWith('0x')) {
       
-      // For testing purposes, allow all wallet addresses
-      // In production, we would uncomment this check: && startupUser.walletConfirmed
-      console.log(`Using startup wallet address: ${startupUser.walletAddress}`);
-      return startupUser.walletAddress;
+      // Always require wallet to be confirmed for security
+      if (startupUser.walletConfirmed) {
+        console.log(`Using confirmed startup wallet address: ${startupUser.walletAddress}`);
+        return startupUser.walletAddress;
+      } else {
+        console.log(`Startup wallet address exists but is not confirmed: ${startupUser.walletAddress}`);
+        return undefined;
+      }
     }
     
     console.log("No valid wallet address found for startup");

@@ -55,21 +55,46 @@ export function StartupDashboard({
   const [activeTab, setActiveTab] = useState("dashboard");
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateContent, setUpdateContent] = useState("");
-  const { address } = useMetaMask();
+  const [isPostingUpdate, setIsPostingUpdate] = useState(false);
+  const { address, sendTransaction } = useMetaMask();
   const { toast } = useToast();
 
   const shortWallet = address 
     ? `${address.slice(0, 4)}...${address.slice(-4)}`
     : "Not connected";
 
-  const handleWithdraw = () => {
-    toast({
-      title: "Withdrawal Initiated",
-      description: `${availableToWithdraw} ETH will be transferred to your wallet.`,
-    });
+  const handleWithdraw = async () => {
+    if (!address) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your MetaMask wallet first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Send ETH directly to the wallet address
+      const txHash = await sendTransaction(
+        address, // Send to the connected wallet
+        availableToWithdraw.toString()
+      );
+      
+      toast({
+        title: "Withdrawal Successful",
+        description: `${availableToWithdraw} ETH has been transferred to your wallet.`,
+      });
+    } catch (error: any) {
+      console.error("Withdrawal failed:", error);
+      toast({
+        title: "Withdrawal Failed",
+        description: error?.message || "Could not complete the withdrawal.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePostUpdate = () => {
+  const handlePostUpdate = async () => {
     if (!updateTitle.trim() || !updateContent.trim()) {
       toast({
         title: "Error",
@@ -78,14 +103,44 @@ export function StartupDashboard({
       });
       return;
     }
-
-    toast({
-      title: "Update Posted",
-      description: "Your update has been sent to all investors.",
-    });
     
-    setUpdateTitle("");
-    setUpdateContent("");
+    try {
+      setIsPostingUpdate(true);
+      
+      // Send update to backend
+      const response = await fetch('/api/updates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: updateTitle,
+          content: updateContent
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to post update");
+      }
+      
+      toast({
+        title: "Update Posted",
+        description: "Your update has been successfully sent to all investors.",
+      });
+      
+      setUpdateTitle("");
+      setUpdateContent("");
+    } catch (error: any) {
+      console.error("Failed to post update:", error);
+      toast({
+        title: "Failed to Post Update",
+        description: error.message || "There was a problem posting your update.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPostingUpdate(false);
+    }
   };
 
   return (
@@ -262,7 +317,8 @@ export function StartupDashboard({
                           <span className="font-mono">{investor.walletAddress}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={investor.status === "confirmed" ? "success" : "outline"}>
+                          <Badge variant={investor.status === "confirmed" ? "default" : "outline"} 
+                            className={investor.status === "confirmed" ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}>
                             {investor.status === "confirmed" ? "Confirmed" : "Pending"}
                           </Badge>
                         </td>
@@ -319,8 +375,20 @@ export function StartupDashboard({
               </div>
               
               <div className="flex justify-end">
-                <Button onClick={handlePostUpdate}>
-                  <Send className="mr-2 h-4 w-4" /> Post Update
+                <Button 
+                  onClick={handlePostUpdate} 
+                  disabled={isPostingUpdate}
+                >
+                  {isPostingUpdate ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" /> Post Update
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>

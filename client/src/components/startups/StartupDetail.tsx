@@ -5,15 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { 
+  BellIcon,
   CalendarIcon, 
   CheckIcon, 
   DownloadIcon, 
   FileCode, 
   FileText, 
   Map, 
+  MessageSquare,
   PieChart 
 } from "lucide-react";
 import { useState } from "react";
+
+export type StartupUpdateProps = {
+  id: number;
+  title: string;
+  content: string;
+  date: string;
+};
 
 export type StartupDetailProps = {
   id: number;
@@ -46,6 +55,7 @@ export type StartupDetailProps = {
     date: string;
     completed: boolean;
   }>;
+  updates?: StartupUpdateProps[];
   onInvest: () => void;
   onUpiPayment?: () => void;
 };
@@ -72,6 +82,7 @@ export function StartupDetail({
   walletAddress,
   team,
   milestones,
+  updates,
   onInvest,
   onUpiPayment
 }: StartupDetailProps) {
@@ -384,6 +395,38 @@ export function StartupDetail({
           </Card>
         </div>
       </div>
+      
+      {/* Updates Section */}
+      {updates && updates.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BellIcon className="h-5 w-5 text-yellow-500 mr-2" />
+              Company Updates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ul className="divide-y divide-gray-200">
+              {updates.map((update) => (
+                <li key={update.id} className="p-6">
+                  <div className="flex space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MessageSquare className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-gray-900">{update.title}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{update.content}</p>
+                      <div className="mt-2 text-xs text-gray-400">{update.date}</div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
